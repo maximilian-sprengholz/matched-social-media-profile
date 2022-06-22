@@ -2,7 +2,7 @@
 
 _Version 0.1.0_
 
-For an experiment, we use individual social media profiles as a stimulus to signal similarity or difference to a respondent. We estimate similarity via a matching approach, and dynamically create a fictitious social media profile for matched individuals.
+For an experiment in the second wave of a panel survey, we use individual social media profiles as a stimulus to signal similarity or difference to a respondent. We estimate similarity/difference via a matching approach using respondent's information from the first wave, and dynamically create a fictitious social media profile for matched individuals.
 
 ## Project organization
 
