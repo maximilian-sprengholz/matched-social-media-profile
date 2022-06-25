@@ -13,6 +13,43 @@ library(tidyverse)
 ### sample data
 df <- read.csv("C:/Users/sprenmax/Seafile/Social-Media-Page/testdata.csv", fileEncoding = "UTF-8")
 
+### functions
+multi_answer_merger <- function(
+    df, colname, stditemtuples, checkedvalue="quoted", openitem, openitemNA="-99"
+    ) {
+    '
+    This function creates a list of all the options ticked for a specific
+    question, so that multiple variables are merged into one string which can
+    be evaluated to a list later. All questions of this type contain an open
+    answer field, which will be concatenated as well.
+
+    df = dataframe
+    colname = name of new column in dataframe
+    stditemtuples = list of tuples c("colname", "Label")
+    checkedvalue = value when TRUE
+    openitem = item containing the open answers
+    openitemNA = value when missing
+    '
+    df[colname] <- ""
+    # concatenate standard items
+    for (tuple in stditemtuples) {
+        df[colname][df[tuple[[1]]]==checkedvalue] <- paste(
+            df[colname][df[tuple[[1]]]==checkedvalue],
+            tuple[[2]],
+            sep=", "
+            )
+        }
+    # add open item
+    df[colname][df[openitem]!=openitemNA] <- paste(
+        df[colname][df[openitem]!=openitemNA],
+        df[openitem][df[openitem]!=openitemNA],
+        sep=", "
+        )
+    # remove ", " from string start
+    df[colname] <- gsub("^,\\s", "", df[colname])
+    # return
+    return(df)
+}
 
 ################################################################################
 #
@@ -54,7 +91,8 @@ df <- rename(df, gender = v_16)
 - Note for matching:
   - Implement extra score for "othereyes" based on eyes value
     (! braun, blau, grün)? It seems that in the Bialetti paper, there was no
-    option to choose different colors outside of the open answer?
+    option to choose different (combinations of) colors outside of the open
+    answer?
   - Fuzzy matching: Order should not matter (Grau-Blau = Blau-Grau)
 '
 df$eyes <- ""
@@ -283,24 +321,14 @@ df <- rename(df, caregiver = v_728)
     matcher to determine (fuzzy) matches among its elements between persons
   - For the scores only the number of matches is relevant, but I do not know if
     "no pets" also means to have 1 in common. Treated as 0 score.
-  - Note for matching: Implement extra score for "otherpets" based on pets value
+  - Implement extra score for "otherpets" based on pets value
     (! Katze, Hund, Fisch, Reptilie, Vogel, Nagetier).
 '
-df$pets <- ""
-df <- df %>% mutate(pets = ifelse(
-    v_714 == "quoted", ifelse(pets == "", "Katze", paste(pets, "Katze", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_715 == "quoted", ifelse(pets == "", "Hund", paste(pets, "Hund", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_716 == "quoted", ifelse(pets == "", "Fisch", paste(pets, "Fisch", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_717 == "quoted", ifelse(pets == "", "Reptilie", paste(pets, "Reptilie", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_718 == "quoted", ifelse(pets == "", "Vogel", paste(pets, "Vogel", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_719 == "quoted", ifelse(pets == "", "Nagetier", paste(pets, "Nagetier", sep=", ")), pets))
-df <- df %>% mutate(pets = ifelse(
-    v_890 == "quoted", ifelse(pets == "", v_891, paste(pets, v_891, sep=", ")), pets))
+petvars <- list(
+    c("v_714", "Katze"), c("v_715", "Hund"), c("v_716", "Fisch"),
+    c("v_717", "Reptilie"), c("v_718", "Vogel"), c("v_719", "Nagetier"),
+    )
+multi_answer_merger(df=df, colname="pets", stditemtuples=petvars, openitem="v_891")
 
 # employment
 '
@@ -479,8 +507,143 @@ df <- rename(df, countriesvisited = v_762)
 '
 df <- rename(df, vacation = v_763)
 
+
 ### THINGS YOU DO ###
 
+# socialmedia
+df <- rename(df, socialmedia = v_764)
+
+# fashion
+df <- rename(df, fashion = v_765)
+
+# smoking
+df <- rename(df, smoking = v_766)
+
+# sportdo / othersportdo
+'
+- Open answers need cleaning
+- Note for matching: Implement extra score for "othersportdo" based on sport value
+  (! in sportlist).
+'
+sportvars <- list(
+    c("v_772", "Fußball"), c("v_773", "Baseball"), c("v_774", "Basketball"),
+    c("v_775", "Volleyball"), c("v_776", "Tennis"), c("v_777", "Eishockey"),
+    c("v_778", "Cricket"), c("v_779", "American Football"), c("v_780", "Feldhockey"),
+    c("v_781", "Radfahren"), c("v_782", "Leichtathletik"), c("v_783", "Tischtennis"),
+    c("v_784", "Laufen"), c("v_785", "Kampfsport"), c("v_786", "Klettern"),
+    c("v_787", "Skifahren"), c("v_788", "Yoga"), c("v_789", "Schwimmen"),
+    c("v_790", "Angeln"), c("v_792", "Keine")
+    )
+multi_answer_merger(df=df, colname="sportdo", stditemtuples=sportvars, openitem="v_897")
+
+# museums
+df <- rename(df, museums = v_794)
+
+# dance
+df <- rename(df, dance = v_795)
+
+
+### HOBBIES AND FREE TIME ###
+
+# musiclisten
+df <- rename(df, musiclisten = v_796)
+
+# music / othermusic
+'
+- Note for matching: take care of othermusic bonus
+'
+musicvars <- list(
+    c("v_802", "Blues"), c("v_803", "Klassik"), c("v_804", "Country"),
+    c("v_805", "Rock"), c("v_806", "Hip-Hop"), c("v_807", "Latin"),
+    c("v_808", "Pop"), c("v_809", "Religiös"), c("v_810", "Funk"),
+    c("v_811", "R&B"), c("v_812", "Rap"), c("v_813", "Elektronisch"),
+    c("v_814", "Folk"), c("v_815", "Jazz"), c("v_816", "New Age"),
+    c("v_817", "Reggae"), c("v_819", "Keine")
+    )
+multi_answer_merger(df=df, colname="music", stditemtuples=musicvars, openitem="v_900")
+
+# bestmusician
+'
+- Needs Cleaning
+'
+df <- rename(df, musiclisten = v_821)
+
+# moviefan
+df <- rename(df, moviefan = v_822)
+
+# movie / othermovie
+'
+- Note for matching: take care of othermovie bonus
+'
+movievars <- list(
+    c("v_823", "Action"), c("v_824", "Abenteuer"), c("v_825", "Komödie"),
+    c("v_826", "Krimi"), c("v_827", "Drama"), c("v_828", "Fantasy"),
+    c("v_829", "Historisch"), c("v_830", "Horror"), c("v_831", "Mystery"),
+    c("v_832", "Politisch"), c("v_833", "Romantik"), c("v_834", "SciFi"),
+    c("v_835", "Thriller"), c("v_836", "Krieg"), c("v_837", "Western"),
+    c("v_838", "Surreal"), c("v_840", "Keine")
+    )
+multi_answer_merger(df=df, colname="movie", stditemtuples=movievars, openitem="v_903")
+
+# bestmovie
+'
+- Needs Cleaning
+'
+df <- rename(df, bestmovie = v_842)
+
+# bestactor
+'
+- Needs Cleaning
+'
+df <- rename(df, bestactor = v_843)
+
+# sportfan
+df <- rename(df, sportfan = v_844)
+
+# sportfollow / othersportfollow
+'
+- Note for matching: take care of othermovie bonus
+'
+sportfollowvars <- list(
+    c("v_845", "Golf"), c("v_846", "Fußball"), c("v_847", "Baseball"),
+    c("v_848", "Basketball"), c("v_849", "Volleyball"), c("v_850", "Tennis"),
+    c("v_851", "Eishockey"), c("v_852", "Cricket"), c("v_853", "American Football"),
+    c("v_854", "Feldhockey"), c("v_855", "Nascar"), c("v_856", "Formel 1"),
+    c("v_857", "Radfahren"), c("v_858", "Darts"), c("v_859", "Snooker"),
+    c("v_860", "Boxen"), c("v_862", "Keine")
+    )
+multi_answer_merger(df=df, colname="sportfollow", stditemtuples=sportfollowvars, openitem="v_903")
+
+# sportfan
+'
+- Needs Cleaning
+'
+df <- rename(df, bestteam = v_864)
+
+# watchtv
+df <- rename(df, watchtv = v_865)
+
+# tvshows
+'
+- Needs Cleaning
+'
+df <- rename(df, tvshows = v_866)
+
+# readbooks
+df <- rename(df, readbooks = v_867)
+
+# books
+'
+- Needs Cleaning
+'
+df <- rename(df, books = v_868)
+
+# length of common vector
+# use common vector to check if any "other" value in there, add to score if yes
+# x1 = list(c(1, 2, 3, 4, 5))
+# y1 = list(c(4, 3, 5, 6, 7))
+#
+# length(intersect(x1[[1]], y1[[1]]))
 
 
 '
@@ -593,6 +756,7 @@ sportdo
 othersportdo
 museums
 dance
+
 musiclisten
 music
 othermusic
