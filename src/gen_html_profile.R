@@ -10,12 +10,12 @@
 library(R6)
 library(tidyverse)
 
-### sample data
-df <- read.csv("C:/Users/sprenmax/Seafile/Social-Media-Page/testdata.csv", fileEncoding = "UTF-8")
+### definitions
+`%!in%` <- Negate(`%in%`)
 
 ### functions
 multi_answer_merger <- function(
-    df, colname, stditemtuples, checkedvalue="quoted", openitem, openitemNA="-99"
+    df, stditemtuples, checkedvalue="quoted", openitem, openitemNA=c("-99", "-66", "")
     ) {
     '
     This function creates a list of all the options ticked for a specific
@@ -28,28 +28,30 @@ multi_answer_merger <- function(
     stditemtuples = list of tuples c("colname", "Label")
     checkedvalue = value when TRUE
     openitem = item containing the open answers
-    openitemNA = value when missing
+    openitemNA = list of values possible when missing
     '
-    df[colname] <- ""
+    df$x <- ""
     # concatenate standard items
     for (tuple in stditemtuples) {
-        df[colname][df[tuple[[1]]]==checkedvalue] <- paste(
-            df[colname][df[tuple[[1]]]==checkedvalue],
+        df$x[df[tuple[[1]]]==checkedvalue] <- paste(
+            df$x[df[tuple[[1]]]==checkedvalue],
             tuple[[2]],
             sep=", "
             )
         }
     # add open item
-    df[colname][df[openitem]!=openitemNA] <- paste(
-        df[colname][df[openitem]!=openitemNA],
-        df[openitem][df[openitem]!=openitemNA],
+    df$x[df[[openitem]] %!in% openitemNA] <- paste(
+        df$x[df[[openitem]] %!in% openitemNA],
+        df[[openitem]][df[[openitem]] %!in% openitemNA],
         sep=", "
         )
     # remove ", " from string start
-    df[colname] <- gsub("^,\\s", "", df[colname])
-    # return
-    return(df)
+    df$x <- gsub("^,\\s", "", df$x)
+    # df$x is returned
 }
+
+### sample data
+df <- read.csv("C:/Users/sprenmax/Seafile/Social-Media-Page/testdata.csv", fileEncoding = "UTF-8")
 
 ################################################################################
 #
@@ -66,6 +68,141 @@ moment quick and dirty, has to be refined with the full data.
     - new columns will be created if information is aggregated/concatenated/...
 - All column names correspond to the keys in the JS weighting file, except
   "US" -> "GER"
+
+ORIGINAL:
+---------
+
+[u] unavailable in dataset
+[r] redundant/unused
+[m] merged with other (main) variable
+
+birthdayDate [u]
+birthyear [r]
+birthmonth [u]
+birthday [u]
+zodiac [u]
+age
+agegroup [r]
+initials
+gender
+othergender [m]
+eyes
+othereyes [m]
+righthanded
+language
+otherlanguage [m]
+totlanguage
+race [u]
+god [u]
+
+currentstate
+currenttown [u]
+currentzip
+currentrural
+grownup_us
+homestate_us
+hometown_us
+homezip_us
+homerural_us
+homestate_foreign
+hometown_foreign
+homezip_foreign
+homerural_foreign
+samestate
+sametown [u]
+samezip
+secondgen
+secondgencountry
+
+marital
+parentsdivorced
+children
+childrenbracket
+siblings
+siblingsbracket
+military
+militarybranch
+education
+college
+gayfriends
+lossfriend
+caregiver
+pets
+otherpets [m]
+
+employment
+ownhouse
+owncar
+studentdebt
+income
+incomebracket
+incomeclassPastDirection
+incomeclassFutureDirection
+incomeclasschild
+incomeclass
+incomeclassfuture
+
+workorplay
+energetic
+competitive
+perfectionist
+patient
+messy
+carebody
+confrontational
+fascination
+fairies
+
+snooze
+streetfurniture
+giveaway
+stoleglass
+foodback
+giftrecycle
+profanelanguage
+readhoroscope
+
+color
+othercolor [m]
+food
+otherfood [m]
+spicyfood
+vegetarian
+countriesvisited
+vacation
+
+socialmedia
+fashion
+smoke
+sportdo
+othersportdo [m]
+museums
+dance
+
+musiclisten
+music
+othermusic [m]
+bestmusician
+moviefan
+movie
+othermovie [m]
+bestmovie
+bestactor
+sportfan
+sportfollow
+othersportfollow [m]
+bestteam
+watchtv
+tvshows
+readbooks
+books
+playvideogames
+videgames
+followwebchannels
+webchannels
+docreative
+creative
+otherfun
 '
 
 
@@ -100,7 +237,6 @@ df <- df %>% mutate(eyes = ifelse(v_687 == "quoted", paste(eyes, "Braun"), eyes)
 df <- df %>% mutate(eyes = ifelse(v_688 == "quoted", paste(eyes, "Blau"), eyes))
 df <- df %>% mutate(eyes = ifelse(v_689 == "quoted", paste(eyes, "Grün"), eyes))
 df <- df %>% mutate(eyes = ifelse(v_881 == "quoted", paste(eyes, v_882) , eyes))
-df$eyes
 df$eyes <- sapply(df$eyes, function(str) {
   matchlist <- str_extract_all(str, regex("(braun|blau|grün|grau|gelb)", ignore_case = T))
   matchlist <- lapply(matchlist, function(match) str_to_title(match, locale = "de-DE"))
@@ -326,9 +462,9 @@ df <- rename(df, caregiver = v_728)
 '
 petvars <- list(
     c("v_714", "Katze"), c("v_715", "Hund"), c("v_716", "Fisch"),
-    c("v_717", "Reptilie"), c("v_718", "Vogel"), c("v_719", "Nagetier"),
+    c("v_717", "Reptilie"), c("v_718", "Vogel"), c("v_719", "Nagetier")
     )
-multi_answer_merger(df=df, colname="pets", stditemtuples=petvars, openitem="v_891")
+df$pets <- multi_answer_merger(df=df, stditemtuples=petvars, openitem="v_891")
 
 # employment
 '
@@ -534,7 +670,7 @@ sportvars <- list(
     c("v_787", "Skifahren"), c("v_788", "Yoga"), c("v_789", "Schwimmen"),
     c("v_790", "Angeln"), c("v_792", "Keine")
     )
-multi_answer_merger(df=df, colname="sportdo", stditemtuples=sportvars, openitem="v_897")
+df$sportdo <- multi_answer_merger(df=df, stditemtuples=sportvars, openitem="v_897")
 
 # museums
 df <- rename(df, museums = v_794)
@@ -560,13 +696,13 @@ musicvars <- list(
     c("v_814", "Folk"), c("v_815", "Jazz"), c("v_816", "New Age"),
     c("v_817", "Reggae"), c("v_819", "Keine")
     )
-multi_answer_merger(df=df, colname="music", stditemtuples=musicvars, openitem="v_900")
+df$music <- multi_answer_merger(df=df, stditemtuples=musicvars, openitem="v_900")
 
 # bestmusician
 '
 - Needs Cleaning
 '
-df <- rename(df, musiclisten = v_821)
+df <- rename(df, bestmusician = v_821)
 
 # moviefan
 df <- rename(df, moviefan = v_822)
@@ -583,7 +719,7 @@ movievars <- list(
     c("v_835", "Thriller"), c("v_836", "Krieg"), c("v_837", "Western"),
     c("v_838", "Surreal"), c("v_840", "Keine")
     )
-multi_answer_merger(df=df, colname="movie", stditemtuples=movievars, openitem="v_903")
+df$movie <- multi_answer_merger(df=df, stditemtuples=movievars, openitem="v_903")
 
 # bestmovie
 '
@@ -612,7 +748,7 @@ sportfollowvars <- list(
     c("v_857", "Radfahren"), c("v_858", "Darts"), c("v_859", "Snooker"),
     c("v_860", "Boxen"), c("v_862", "Keine")
     )
-multi_answer_merger(df=df, colname="sportfollow", stditemtuples=sportfollowvars, openitem="v_903")
+df$sportfollow <- multi_answer_merger(df=df, stditemtuples=sportfollowvars, openitem="v_906")
 
 # sportfan
 '
@@ -638,6 +774,89 @@ df <- rename(df, readbooks = v_867)
 '
 df <- rename(df, books = v_868)
 
+# playvideogames
+df <- rename(df, playvideogames = v_871)
+
+# videogames
+'
+- Needs Cleaning
+'
+df <- rename(df, videogames = v_872)
+
+# followwebchannels
+df <- rename(df, followwebchannels = v_869)
+
+# webchannels
+'
+- Needs Cleaning
+'
+df <- rename(df, webchannels = v_870)
+
+# docreative
+df <- rename(df, docreative = v_873)
+
+# creative
+'
+- Needs Cleaning
+'
+df <- rename(df, creative = v_874)
+
+# otherfun
+'
+- Needs Cleaning
+'
+df <- rename(df, otherfun = v_875)
+
+
+################################################################################
+#
+#   MATCHING
+#
+################################################################################
+'
+The matching produces a sum score based on specific weights for each match.
+What needs to be accomodated:
+- Exact matches on value when only one value of a pre-defined set is possible
+- Exact matches on values when multiple values of a pre-defined set are possible
+- Fuzzy matches (=exact approx.) for open answers (single, list), either as
+  standalone item or "other" extension (such as "othermusic")
+- Exclusion rules:
+  - Do not match on everything that resembles NA (-99, "", ...)
+  - Implement skip when items not set (e.g. music when musiclisten=0/"unquoted")
+'
+
+matchingvars <- list(
+    "age", "initials", "gender", "eyes", "righthanded", "language", "totlanguage",
+    "currentstate", "currentzip", "currentrural", "grownup_ger", "homestate_ger",
+    "hometown_ger", "homezip_ger", "homerural_ger", "homestate_foreign",
+    "hometown_foreign", "homezip_foreign", "homerural_foreign", "samestate",
+    "samezip", "secondgen", "secondgencountry", "marital", "parentsdivorced",
+    "children", "childrenbracket", "siblings", "siblingsbracket", "military",
+    "militarybranch", "education", "college", "gayfriends", "lossfriend",
+    "caregiver", "pets", "employment", "ownhouse", "owncar", "studentdebt",
+    "income", "incomebracket", "incomeclassPastDirection",
+    "incomeclassFutureDirection", "incomeclasschild", "incomeclass",
+    "incomeclassfuture", "workorplay", "energetic", "competitive",
+    "perfectionist", "patient", "messy", "carebody", "confrontational",
+    "fascination", "fairies", "snooze", "streetfurniture", "giveaway",
+    "stoleglass", "foodback", "giftrecycle", "profanelanguage", "readhoroscope",
+    "color", "food", "spicyfood", "vegetarian", "countriesvisited", "vacation",
+    "socialmedia", "fashion", "smoke", "sportdo", "museums", "dance", "musiclisten",
+    "music", "bestmusician", "moviefan", "movie", "bestmovie", "bestactor",
+    "sportfan", "sportfollow", "bestteam", "watchtv", "tvshows", "readbooks",
+    "books", "playvideogames", "videgames", "followwebchannels", "webchannels",
+    "docreative", "creative", "otherfun"
+)
+
+
+
+# extract row with matching vars for individual to be matched (use loc index)
+# extract matching vars for all other individuals
+# shuffle
+# use intersect for common values (perhaps use match and again index? keep row length!)
+# per match, invoke score function
+# per match, pass values on to new variables (match_varname = "matchedvalue")
+
 # length of common vector
 # use common vector to check if any "other" value in there, add to score if yes
 # x1 = list(c(1, 2, 3, 4, 5))
@@ -647,147 +866,19 @@ df <- rename(df, books = v_868)
 
 
 '
-ORIGINAL:
----------
+Logic:
 
-[u] unavailable in dataset
-[r] redundant/unused
-[?] open question
-
-birthdayDate [u]
-birthyear [r]
-birthmonth [u]
-birthday [u]
-zodiac [u]
-age
-agegroup [r]
-initials
-gender
-othergender [?]
-eyes
-othereyes
-righthanded
-language
-otherlanguage
-totlanguage [?]
-race [u]
-god [u]
-
-currentstate
-currenttown [u]
-currentzip
-currentrural
-grownup_us
-homestate_us
-hometown_us
-homezip_us
-homerural_us
-homestate_foreign
-hometown_foreign
-homezip_foreign
-homerural_foreign
-samestate
-sametown [u]
-samezip
-secondgen
-secondgencountry
-
-marital
-parentsdivorced
-children
-childrenbracket
-siblings
-siblingsbracket
-military
-militarybranch
-education
-college [?, studienort?]
-gayfriends
-lossfriend
-caregiver
-pets
-otherpets
-
-employment
-ownhouse
-owncar
-studentdebt
-income
-incomebracket
-incomeclassPastDirection
-incomeclassFutureDirection
-incomeclasschild
-incomeclass
-incomeclassfuture
-
-workorplay
-energetic
-competitive
-perfectionist
-patient
-messy
-carebody
-confrontational
-fascination
-fairies
-
-snooze
-streetfurniture
-giveaway
-stoleglass
-foodback
-giftrecycle
-profanelanguage
-readhoroscope
-
-color
-othercolor
-food
-otherfood
-spicyfood
-vegetarian
-countriesvisited
-vacation
-
-socialmedia
-fashion
-smoke
-sportdo
-othersportdo
-museums
-dance
-
-musiclisten
-music
-othermusic
-bestmusician
-moviefan
-movie
-othermovie
-bestmovie
-bestactor
-sportfan
-sportfollow
-othersportfollow
-bestteam
-watchtv
-tvshows
-readbooks
-books
-playvideogames
-videgames
-followwebchannels
-webchannels
-docreative
-creative
-otherfun
+- Shuffle dataframe[!person]
+- For each var check for match
+  - group vars by check mode (see above)
 '
 
 
-### match
-
-
-### export social media profiles
+################################################################################
+#
+#   EXPORT SOCIAL MEDIA PROFILES
+#
+################################################################################
 
 # CLASS TEST
 # - fix structure
