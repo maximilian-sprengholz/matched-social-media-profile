@@ -47,6 +47,7 @@ match_values <- function(
         p2,
         matchvar,
         valuesNA=valuesNA,
+        keepunmatchedinfo=keepunmatchedinfo,
         simscore,
         split,
         fuzzy,
@@ -105,7 +106,8 @@ matcher <- function(
         df,
         idcol="lfdn", # person id, numeric
         matchvarparams, # dict containing all var-specific parameters
-        valuesNA = c("-99", "-66", ".", ""), # vector of values that should not be matched
+        valuesNA, # vector of values that should not be matched
+        keepunmatchedinfo, # vector of variables for which info should be kept for profile header even if unmatched
         maxmatches=30, # maximum no of matches allowed per person
         simlow=300, # simscore value below which similarity is low
         simhigh=600 # simscore value above which similarity is high
@@ -150,7 +152,8 @@ matcher <- function(
 
                                 # match and score
                                 matchresults <- match_values(
-                                    p1, p2, matchvar, valuesNA, simscore,
+                                    p1, p2, matchvar,
+                                    valuesNA, keepunmatchedinfo, simscore,
                                     matchvarparams$get(matchvar)$get("split", FALSE),
                                     matchvarparams$get(matchvar)$get("fuzzy", FALSE),
                                     matchvarparams$get(matchvar)$get("fuzzymaxdist", 4)
@@ -163,11 +166,22 @@ matcher <- function(
                             }
                         )
 
-                    # return only if similarity high or low, add score and ids
-                    if (simscore<simlow | simscore>simhigh) {
+                    # return only if similarity high or low
+                    if (simscore<simlow || simscore>simhigh) {
+                        # add header info (displayed also when unmatched)
+                        for (col in keepunmatchedinfo) {
+                            row_matched[paste("profileheader", col, sep="_")] <- row_p2[col]
+                        }
+                        # add simscore and match id
                         row_matched$simscore <- simscore
+                        row_matched[idcol] <- row_p2[idcol]
+                        # rename columns
+                        colnames(row_matched) <- c(
+                            paste("match", colnames(row_matched), sep="_")
+                            )
+                        # add original id for merging
                         row_matched[idcol] <- row_p1[idcol]
-                        row_matched[paste("match", idcol, sep="_")] <- row_p2[idcol]
+                        # return
                         row_matched
                         }
 
@@ -937,13 +951,11 @@ matchvarparams <- dict(list(
 #     )
 
 
-### RUN ###
-df_match_all <- matcher(df=df, matchvarparams=matchvarparams)
-
-### MERGE ###
-colnames(df_match_all) <- c(
-    paste("match", colnames(unlist(matchvarparams$keys()),sep="_"),
-    "lfdn",
-    "match_lfdn"
+### RUN AND MERGE ###
+df_match_all <- matcher(
+    df=df,
+    matchvarparams=matchvarparams,
+    valuesNA=c("-99", "-66", ".", ""),
+    keepunmatchedinfo=c("age", "gender", "currentstate")
     )
 df_merged <- merge(df, df_match_all, by="lfdn", all=TRUE)
