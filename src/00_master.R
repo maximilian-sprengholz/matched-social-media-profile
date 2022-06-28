@@ -29,7 +29,10 @@ df <- df[1:5,]
 # clean
 source("src/01_clean.R")
 
+# parameters fpr match and export
+source("src/02_matchvarparams.R")
+
 # match
-source("src/02_match.R")
+source("src/03_match.R")
 
 # export profiles
