@@ -14,8 +14,8 @@ moment quick and dirty, has to be refined with the full data.
 - All column names correspond to the keys in the JS weighting file, except
   "US" -> "GER"
 
-ORIGINAL:
----------
+DIFF TO ORIGINAL:
+----------------
 
 [u] unavailable in dataset
 [r] redundant/unused
@@ -26,128 +26,12 @@ birthyear [r]
 birthmonth [u]
 birthday [u]
 zodiac [u]
-age
 agegroup [r]
-initials
-gender
-othergender [m]
-eyes
-othereyes [m]
-righthanded
-language
-otherlanguage [m]
-totlanguage
+othergender [u]
 race [u]
 god [u]
-
-currentstate
 currenttown [u]
-currentzip
-currentrural
-grownup_us
-homestate_us
-hometown_us
-homezip_us
-homerural_us
-homestate_foreign
-hometown_foreign
-homezip_foreign
-homerural_foreign
-samestate
 sametown [u]
-samezip
-secondgen
-secondgencountry
-
-marital
-parentsdivorced
-children
-childrenbracket
-siblings
-siblingsbracket
-military
-militarybranch
-education
-college
-gayfriends
-lossfriend
-caregiver
-pets
-otherpets [m]
-
-employment
-ownhouse
-owncar
-studentdebt
-income
-incomebracket
-incomeclassPastDirection
-incomeclassFutureDirection
-incomeclasschild
-incomeclass
-incomeclassfuture
-
-workorplay
-energetic
-competitive
-perfectionist
-patient
-messy
-carebody
-confrontational
-fascination
-fairies
-
-snooze
-streetfurniture
-giveaway
-stoleglass
-foodback
-giftrecycle
-profanelanguage
-readhoroscope
-
-color
-othercolor [m]
-food
-otherfood [m]
-spicyfood
-vegetarian
-countriesvisited
-vacation
-
-socialmedia
-fashion
-smoke
-sportdo
-othersportdo [m]
-museums
-dance
-
-musiclisten
-music
-othermusic [m]
-bestmusician
-moviefan
-movie
-othermovie [m]
-bestmovie
-bestactor
-sportfan
-sportfollow
-othersportfollow [m]
-bestteam
-watchtv
-tvshows
-readbooks
-books
-playvideogames
-videgames
-followwebchannels
-webchannels
-docreative
-creative
-otherfun
 '
 
 ### Functions ###
@@ -175,7 +59,6 @@ multi_answer_merger <- function(df, stditemtuples, checkedvalue="quoted") {
     df$x <- gsub("^,\\s", "", df$x)
     # df$x is returned
 }
-
 
 ### DEMOGRAPHICS ###
 
@@ -795,6 +678,9 @@ df <- rename(df, creative = v_874)
 '
 df <- rename(df, otherfun = v_875)
 
-
-### SAVE ###
-write.csv(df, paste(wd, "testdata_clean.csv", sep="/") , row.names = TRUE)
+### GENERAL STRING CLEANING ###
+'
+Perhaps also encoding stuff can be done here (or at the beginning of this file).
+'
+df %>%
+  mutate_if(is.character, str_trim)

@@ -23,6 +23,7 @@ match_score <- function(matchvar, matches) {
     - Weights can be constants or functions
     - If function, pass on value of match and match vector length (values have
       particular scores, vector elements get the same score per variable)
+    - Values for which no return is specified throw a message
 
     The call mirrors the weights.js call of the Baliettia paper (as far as I can
     judge without the original matching function).
@@ -30,6 +31,11 @@ match_score <- function(matchvar, matches) {
     weight <- matchvarparams$get(matchvar)$get("weight") # throws error if not set
     if (is.function(weight)) {
         score <- weight(value=matches[1], common=length(matches))
+        if (length(score)==0) {
+            # debug missing scores
+            message(paste0("No score found for ", matchvar, " [", matches[1], "]. Score set to 0."))
+            score <- 0
+            }
     } else if (is.numeric(weight)) {
         score <- weight
         }
@@ -81,7 +87,6 @@ match_values <- function(
         # score each match
         if (length(matches)>0 && !any(is.na(matches))) {
             score <- match_score(matchvar, matches)
-            message(paste(matchvar, matches, score, sep=" "))
             if (is.character(split)) {
                 # collapse again if vector
                 matches <- paste(matches, collapse=split)
@@ -191,6 +196,10 @@ Comments:
   answers contain a lot of elements, because the total weight these generate
   might be lower than the (max. 3 x weight) for the closed answer categories.
 - Please see comments at specific vars for deviations or questions
+- ENCODING ISSUES: Some string matches do not return score weights because
+  (I assume) the category strings I provided are somehow different to the ones
+  in the data (e.g. "Würzig, aber nicht zu viel"). Other Umlauts are matched,
+  though, so no idea what the issue is exactly. Needs some digging.
 '
 
 matchvarparams <- dict(list(
@@ -929,8 +938,12 @@ matchvarparams <- dict(list(
 
 
 ### RUN ###
-#df <- read.csv(paste(wd, "testdata_clean.csv", sep="/"), fileEncoding = "UTF-8")
-df_match_all <- ""
 df_match_all <- matcher(df=df, matchvarparams=matchvarparams)
-df_match_all
-df_match_all$simscore
+
+### MERGE ###
+colnames(df_match_all) <- c(
+    paste("match", colnames(unlist(matchvarparams$keys()),sep="_"),
+    "lfdn",
+    "match_lfdn"
+    )
+df_merged <- merge(df, df_match_all, by="lfdn", all=TRUE)

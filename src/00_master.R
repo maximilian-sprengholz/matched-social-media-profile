@@ -30,5 +30,6 @@ df <- df[1:5,]
 source("src/01_clean.R")
 
 # match
+source("src/02_match.R")
 
 # export profiles

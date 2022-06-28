@@ -60,3 +60,5 @@ test <- df_p2 %>%
   })
 
 test
+
+paste0(getwd(), '/')
