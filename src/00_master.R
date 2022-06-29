@@ -9,6 +9,7 @@
 # install.packages("tidyverse")
 # install.packages("stringdist")
 # install.packages("collections")
+# install.packages("stringi")
 library(R6)
 library(tidyverse)
 library(stringdist)
