@@ -130,7 +130,7 @@ df$totlanguage <- sapply(df$otherlanguage, function(str) {
 
 # currentstate
 '
-Needs labels.
+Labels missing
 '
 df <- rename(df, currentstate = v_23)
 

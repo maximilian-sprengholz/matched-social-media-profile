@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <!-- FONTAWSOME ICON KIT -->
-    <script src="https://kit.fontawesome.com/675d310e85.js" crossorigin="anonymous"></script>
     <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=SourceSansPro">
     <style>
 
     body {
         font-family: "Source Sans Pro", sans-serif;
         background-color: #f5f5f5;
-        font-size: 14px; /* media query for mobile? */
+        font-size: 15px; /* media query for mobile? */
         color: #333
     }
 
@@ -22,7 +22,7 @@
         position: relative;
         width: 100%;
         height: 100%;
-        max-width: 700px;
+        max-width: 800px;
         min-width: 200px;
         overflow: auto;
         background-color: #fff;
@@ -91,6 +91,8 @@
         margin: 20px 20px 0 0px;
         border: 1px solid #f0f0f0;
         border-radius: 6px;
+        flex-grow: 2;
+        flex-shrink: 2;
     }
 
     div.info-group-head {
@@ -161,8 +163,8 @@
 
     ul.info-items {
         display: inline-block;
-        list-style-position: inside;
-        padding: 0 1rem 0 1rem;
+        list-style-position: outside;
+        padding: 0rem 1rem 0 2rem;
     }
 
 
@@ -180,7 +182,7 @@
             <div id="profile_intro">
                 <h1>F.</h1>
                 <p class="quote">
-                    Männlich, 44 Jahre, Berlin
+                    Weiblich, 32 Jahre, Berlin
                 </p>
             </div>
         </div>
@@ -190,41 +192,84 @@
                     <h2><span class="info-group-icon fa-solid fa-user"></span>Demografie</h2>
                 </div>
                 <ul class="info-items">
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Ich bin Rechtshänderin.</li>
-                <ul>
-            </div>
-            <div id="location" class="info-group">
-                <div class="info-group-head">
-                    <h2><span class="info-group-icon fa-solid fa-user"></span>Demografie</h2>
-                </div>
-                <ul class="info-items">
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Ich bin Rechtshänderin.</li>
-                    <li>Ich bin Rechtshänderin.</li>
-                    <li>Ich bin Rechtshänderin.</li>
-                    <li>Ich bin Rechtshänderin.</li>
+                    <li>I am Asian.</li>
+                    <li>I have brown eyes, and I am right handed.</li>
                 <ul>
             </div>
             <div id="family" class="info-group">
                 <div class="info-group-head">
-                    <h2><span class="info-group-icon fa-solid fa-user"></span>Demografie</h2>
+                    <h2><span class="info-group-icon fa-solid fa-people-group"></span>Familie</h2>
                 </div>
                 <ul class="info-items">
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Ich bin Rechtshänderin.</li>
-                    <li>Ich bin Rechtshänderin.</li>
+                    <li>I am single, I have no children, and I have two siblings.</li>
+                    <li>My parents divorced.</li>
+                    <li>I went to college.</li>
+                    <li>I have friends in the LGBT community.</li>
                 <ul>
             </div>
             <div id="finance" class="info-group">
                 <div class="info-group-head">
-                    <h2><span class="info-group-icon fa-solid fa-user"></span>Demografie</h2>
+                    <h2><span class="info-group-icon fa-solid fa-money-check-dollar"></span>Finanzen</h2>
                 </div>
                 <ul class="info-items">
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Meine Augenfarbe ist blau.</li>
-                    <li>Ich bin Rechtshänderin.</li>
+                    <li>I managed to elevate my socio-economic status compared to my childhood.</li>
+                <ul>
+            </div>
+            <div id="personality" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-face-smile"></span>Persönlichkeit</h2>
+                </div>
+                <ul class="info-items">
+                    <li>I enjoy taking part in competitions and prove my skills, and I am very careful to details, I consider myself a perfectionist.</li>
+                    <li>Taking care of the body is important for me.</li>
+                    <li>I am not a confrontational person.</li>
+                    <li>I am fascinated by technological progress, and, I know that some people will think that it is silly, but sometimes I like to believe that fantastic creatures like fairies, gnomes and the like are real.</li>
+                <ul>
+            </div>
+            <div id="behavior" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-user"></span>Verhalten</h2>
+                </div>
+                <ul class="info-items">
+                    <li>I have read that more and more people have problems giving away things they do not really need or use any more, but not me!</li>
+                    <li>I am not that type of person that sends back food at the restaurant if I don’t like it.</li>
+                    <li>I never read horoscopes or similar silly things.</li>
+                <ul>
+            </div>
+            <div id="taste" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-user"></span>Geschmack</h2>
+                </div>
+                <ul class="info-items">
+                    <li>My favorite color is blue.</li>
+                    <li>My dream country for a vacation is Japan.</li>
+                    <li>My favorite food is Japanese, I like my food spicy, but not too much.</li>
+                <ul>
+            </div>
+            <div id="thingsyoudo" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-user"></span>Dinge, die ich mache</h2>
+                </div>
+                <ul class="info-items">
+                    <li>If I use social media? I am a somewhat active user.</li>
+                    <li>I don’t smoke.</li>
+                    <li>I go dancing, but only sometimes.</li>
+                <ul>
+            </div>
+            <div id="thingsyoulike" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-user"></span>Dinge, die ich mag</h2>
+                </div>
+                <ul class="info-items">
+                    <li>I like to play video games.</li>
+                <ul>
+            </div>
+            <div id="quirk" class="info-group">
+                <div class="info-group-head">
+                    <h2><span class="info-group-icon fa-solid fa-user"></span>Ein interessanter Fakt über mich</h2>
+                </div>
+                <ul class="info-items">
+                    <li>I was the first of my family to attend and graduate from a university.</li>
                 <ul>
             </div>
         </div>

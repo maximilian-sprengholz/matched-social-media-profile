@@ -13,6 +13,7 @@ library(R6)
 library(tidyverse)
 library(stringdist)
 library(collections)
+library(stringi)
 
 ### definitions
 set.seed(42)
