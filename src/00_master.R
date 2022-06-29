@@ -37,3 +37,4 @@ source("src/02_matchvarparams.R")
 source("src/03_match.R")
 
 # export profiles
+source("src/04_export_profiles.R")
