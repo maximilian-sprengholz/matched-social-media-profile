@@ -23,7 +23,7 @@ matcher <- function(
         matchvarparams, # dict containing all var-specific parameters
         valuesNA, # vector of values that should not be matched
         keepunmatchedinfo, # vector of variables for which info should be kept for profile header even if unmatched
-        maxmatches=30, # maximum no of matches allowed per person
+        maxmatches=30, # maximum no of matches allowed per person NOT IMPLEMENTED YET
         simlow=300, # simscore value below which similarity is low
         simhigh=600 # simscore value above which similarity is high
         ) {
