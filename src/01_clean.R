@@ -74,7 +74,6 @@ Note for matching: Implement extra score for "othergender" based on eyes value
 (! Männlich, Weiblich).
 '
 df <- rename(df, gender = v_16)
-#df$gender <- tolower(df$gender) # case?
 
 # eyes / othereyes
 '

@@ -13,6 +13,11 @@ What needs to be accomodated:
 - Exclusion rules:
   - Do not match on everything that resembles NA (-99, "", ...), which should
     also cover the case when variables are not set because of a filter
+
+Changes 2022-07-08:
+
+- match, but return just a match indicator, the id of the matched person and the
+  score (just point to the matched person data row)
 '
 
 ### FUNCTIONS ###
@@ -20,20 +25,21 @@ What needs to be accomodated:
 matcher <- function(
         df,
         idcol="lfdn", # person id, numeric
-        matchvarparams, # dict containing all var-specific parameters
+        matchparams, # dict containing all var-specific parameters
         valuesNA, # vector of values that should not be matched
-        keepunmatchedinfo, # vector of variables for which info should be kept for profile header even if unmatched
-        maxmatches=30, # maximum no of matches allowed per person NOT IMPLEMENTED YET
         simlow=300, # simscore value below which similarity is low
-        simhigh=600 # simscore value above which similarity is high
+        simhigh=600, # simscore value above which similarity is high
+        maxmatches_simlow=5, # max no of low-similarity matches allowed per person
+        maxmatches_simhigh=5 # max no of high-similarity matches allowed per person
         ) {
-    '
-    - Wrapper function
-    - Input: df input, single row per person
-    - Output: long format, multiple rows per person for each (non-)match
-    '
-    # Step 1: Extract row of one person, match to all other rows (persons)
-    df_matchsubset <- df[, c(idcol, unlist(matchvarparams$keys()))]
+
+    ### Step 1: Extract row of one person with all the variables we match on
+    matchvars <- c()
+    matchvars <- unlist(sapply(
+      unlist(matchparams$keys()),
+      function(x) { matchvars <- c(matchvars, matchparams$get(x)$get("items")$keys()) }
+      ))
+    df_matchsubset <- df[, c(idcol, matchvars)]
     df_match_all <- df_matchsubset %>%
         pmap_dfr(function(...) {
 
@@ -46,61 +52,83 @@ matcher <- function(
               ,]
             df_p2 <- df_p2[sample(nrow(df_p2)),]
 
-            # Step 2: Match rows between p1 and all p2
+            # maximum no of matches allowed
+            nmatches_simlow <- 0
+            nmatches_simhigh <- 0
+
+            ### Step 2: Match rows between p1 and all p2
             df_match_person <- df_p2 %>%
                 pmap_dfr(function(...) {
 
-                    # defaults
-                    simscore <- 0 # start value
-                    row_p2 <- tibble(...) # person 2 row from matching set
+                    # do not bother after having enough matches
+                    if ((nmatches_simlow < maxmatches_simlow)
+                         || (nmatches_simhigh < maxmatches_simhigh)) {
 
-                    # Step 3: match variables, add match scores
-                    row_matched <- pmap_dfr(
-                        list(row_p1, row_p2, names(row_p2)),
-                        function(p1, p2, matchvar) {
+                        # person 2 row from matching set
+                        row_p2 <- tibble(...)
 
-                            # do not match on id
-                            # check if cells contain something
-                            if (matchvar != idcol
-                                && length(p1)==1 && length(p2)==1
-                                && !is.na(p1) && !is.na(p2)) {
+                        ### Step 3: match variables, gather match scores
+                        row_scores <- pmap_dfr(
+                            list(row_p1, row_p2, names(row_p2)),
+                            function(p1, p2, matchvar) {
 
-                                # match and score
-                                matchresults <- match_values(
-                                    p1, p2, matchvar,
-                                    valuesNA, keepunmatchedinfo, simscore,
-                                    matchvarparams$get(matchvar)$get("split", FALSE),
-                                    matchvarparams$get(matchvar)$get("fuzzy", FALSE),
-                                    matchvarparams$get(matchvar)$get("fuzzymaxdist", 4)
-                                    )
+                                # do not match on id
+                                # check if cells contain something
+                                if (matchvar != idcol
+                                    && length(p1)==1 && length(p2)==1
+                                    && !is.na(p1) && !is.na(p2)) {
 
-                                simscore <<- simscore + matchresults[[2]]
-                                matches <- matchresults[[1]]
+                                    # get item parameter sub-dict
+                                    for (k in unlist(matchparams$keys())) {
+                                        items <- matchparams$get(k)$get("items")
+                                        if (items$has(matchvar)) {
+                                            matchvarparams <- items$get(matchvar)
+                                            break
+                                        }
+                                    }
 
+                                    # match and score
+                                    score <- match_values(
+                                        p1, p2,
+                                        matchvar, matchvarparams,
+                                        valuesNA,
+                                        matchvarparams$get("split", FALSE),
+                                        matchvarparams$get("fuzzy", FALSE),
+                                        matchvarparams$get("fuzzymaxdist", 4)
+                                        )
+
+                                    }
                                 }
-                            }
-                        )
-
-                    # return only if similarity high or low
-                    if (simscore<simlow || simscore>simhigh) {
-                        # add header info (displayed also when unmatched)
-                        for (col in keepunmatchedinfo) {
-                            row_matched[paste("profileheader", col, sep="_")] <- row_p2[col]
-                        }
-                        # add simscore and match id
-                        row_matched$simscore <- simscore
-                        row_matched[idcol] <- row_p2[idcol]
-                        # rename columns
-                        colnames(row_matched) <- c(
-                            paste("match", colnames(row_matched), sep="_")
                             )
-                        # add original id for merging
-                        row_matched[idcol] <- row_p1[idcol]
-                        # return
-                        row_matched
-                        }
 
-                    })
+                        # sum scores, return match only if similarity high or low
+                        simscore <- rowSums(row_scores)
+                        if (simscore<simlow || simscore>simhigh) {
+                            # count
+                            if (simscore<simlow) {
+                                nmatches_simlow <<- nmatches_simlow + 1
+                            } else {
+                                nmatches_simhigh <<- nmatches_simhigh + 1
+                                }
+                            # return person id (for merge), match id, match simscore
+                            row_matched <- data.frame (
+                                row_p1[idcol],
+                                row_p2[idcol],
+                                simscore
+                                )
+                            # naming quirk when dfs passed
+                            colnames(row_matched) <- c(
+                                idcol,
+                                paste0("match_", idcol),
+                                "match_simscore")
+                            return(row_matched)
+                        } else {
+                            return(NULL)
+                        }
+                    } else {
+                        return(NULL)
+                        }
+                })
             }
         )
     }
@@ -109,9 +137,8 @@ match_values <- function(
         p1,
         p2,
         matchvar,
+        matchvarparams,
         valuesNA=valuesNA,
-        keepunmatchedinfo=keepunmatchedinfo,
-        simscore,
         split,
         fuzzy,
         fuzzymaxdist
@@ -150,22 +177,17 @@ match_values <- function(
 
         # score each match
         if (length(matches)>0 && !any(is.na(matches))) {
-            score <- match_score(matchvar, matches)
-            if (is.character(split)) {
-                # collapse again if vector
-                matches <- paste(matches, collapse=split)
-                }
-            matchresults <- list(matches, score)
+            score <- match_score(matchvar, matchvarparams, matches)
         } else {
-            matchresults <- list(NA, 0)
+            score <- 0
             }
     } else {
-        matchresults <- list(NA, 0)
+        score <- 0
         }
-    return(matchresults)
+    return(score)
     }
 
-match_score <- function(matchvar, matches) {
+match_score <- function(matchvar, matchvarparams, matches) {
     '
     Returns the score (weight) associated with a specific match:
     - Weights can be constants or functions
@@ -176,7 +198,7 @@ match_score <- function(matchvar, matches) {
     The call mirrors the weights.js call of the Baliettia paper (as far as I can
     judge without the original matching function).
     '
-    weight <- matchvarparams$get(matchvar)$get("weight") # throws error if not set
+    weight <- matchvarparams$get("weight") # throws error if not set
     if (is.function(weight)) {
         score <- weight(value=matches[1], common=length(matches))
         if (length(score)==0) {
@@ -190,11 +212,33 @@ match_score <- function(matchvar, matches) {
     return(score)
     }
 
-### RUN AND MERGE ###
-df_match_all <- matcher(
+### RUN ###
+df_matched <- matcher(
     df=df,
-    matchvarparams=matchvarparams,
-    valuesNA=c("-99", "-66", ".", ""),
-    keepunmatchedinfo=c("age", "initials", "gender", "currentstate")
+    matchparams=matchparams,
+    valuesNA=c("-99", "-66", ".", "")
     )
-df_merged <- merge(df, df_match_all, by="lfdn", all=TRUE)
+
+### MERGE ###
+'
+At the moment the merging forces a long format (every match gets a row),
+which is easier to deal with for the export, because you can implement some
+selection rules based on the match(row)-specific similarity cores.
+
+You could also merge it in wide format, though, an approach for which is
+commented out below.
+'
+df_merged <- merge(df, df_matched, by="lfdn", all=TRUE)
+# ### wide format
+# # index matches by person
+# df_matched <- df_matched %>% group_by(lfdn) %>% mutate(match_no = row_number(lfdn))
+# # reshape
+# df_matched <- df_matched %>%
+#     pivot_wider(
+#         names_from = match_no,
+#         values_from = c(match_lfdn, match_simscore))
+# # rename (pattern: match[no]_var instead of match_var_[no]) and order
+# colnames(df_matched) <- gsub("(match)(_\\w+)_([0-9]+)", "\\1\\3\\2", colnames(df_matched))
+# df_matched <- df_matched[,order(colnames(df_matched))]
+# # merge
+# df_merged <- merge(df, df_matched, by="lfdn", all=TRUE)

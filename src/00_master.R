@@ -24,15 +24,15 @@ setwd(wd)
 
 ### run
 
-# sample data
+# sample data (use smaller subset to speed up matching)
 df <- read.csv(paste(wd, "testdata.csv", sep="/"), fileEncoding = "UTF-8")
-df <- df[1:5,]
+df <- df[1:30,]
 
 # clean
 source("src/01_clean.R")
 
 # parameters fpr match and export
-source("src/02_matchvarparams.R")
+source("src/02_matchparams.R")
 
 # match
 source("src/03_match.R")

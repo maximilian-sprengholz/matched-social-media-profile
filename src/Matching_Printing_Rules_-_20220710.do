@@ -20,7 +20,7 @@ global out 		"C:\Users\geisslef\_Work\04_Paper\Covid-19-Vaccination\Daten\Wave6\
 clear all
 set scheme plottigblind
 
-use "$data/DE_82803 D-P21-13185 HU Berlin Impfskeptiker_Welle 6_Finale Daten", clear
+use "C:\Users\sprenmax\Seafile\Social-Media-Page\DE_82803 D-P21-13185 HU Berlin Impfskeptiker_Welle 6_Testdatensatz_2.dta", clear
 
 * ---------------------------------------------------------------------------- *
 
@@ -35,7 +35,8 @@ replace header1 = v_686
 * header2
 cap drop str_gender str_county str_age
 decode v_16, gen(str_gender)
-decode v_23, gen(str_county)
+//decode v_23, gen(str_county)
+gen str_county = v_23
 tostring v_15, gen(str_age)
 
 cap drop header2
@@ -49,8 +50,8 @@ gen str header2 = str_gender + "," + " " + str_age + " " + "Jahre" + "," + " " +
 * <i class="fa-solid fa-user"></i>
 
 
-* general1
-cap drop str_eyecolor 
+* demography1
+cap drop str_eyecolor
 gen str str_eyecolor = ""
 replace str_eyecolor = v_882
 replace str_eyecolor = ustrlower(str_eyecolor)
@@ -59,18 +60,18 @@ replace str_eyecolor = "blau" if v_688 == 1
 replace str_eyecolor = "grün" if v_689 == 1
 replace str_eyecolor = "NA" if v_882 == " "
 
-cap drop str_hand 
+cap drop str_hand
 decode v_693, gen(str_hand)
 replace str_hand = "Linkshänderin" if str_hand == "Linkshänder" & v_16 == 1
 replace str_hand = "Rechtshänderin" if str_hand == "Rechtshänder" & v_16 == 1
 
-cap drop general1
-gen str general1 = ""
-replace general1 = "Meine Augenfarbe ist" + " " +  str_eyecolor + " " + "und ich bin" + " "+ str_hand + "."
+cap drop demography1
+gen str demography1 = ""
+replace demography1 = "Meine Augenfarbe ist" + " " +  str_eyecolor + " " + "und ich bin" + " "+ str_hand + "."
 
 
 
-* general2
+* demography2
 cap drop str_land
 gen str str_land = ""
 replace str_land = "Ich komme aus Deutschland." if v_150 == 1
@@ -84,15 +85,15 @@ replace str_language = proper(str_language)
 replace str_language = "Deutsch" if v_883 == 1
 
 
-cap drop str_other_languages 
+cap drop str_other_languages
 gen str str_other_languages = ""
 replace str_other_languages = v_695
 replace str_other_languages = proper(str_other_languages)
 replace str_other_languages = "ansonsten keine andere Fremdsprache" if v_695 == " " | v_695 == "-99"
 
-cap drop general3
-gen str general3 = ""
-replace general3 = str_land + " " + "Meine Muttersprache ist" + " " + str_language + " " + "und ich spreche" + " " + str_other_languages + "."
+cap drop demography3
+gen str demography3 = ""
+replace demography3 = str_land + " " + "Meine Muttersprache ist" + " " + str_language + " " + "und ich spreche" + " " + str_other_languages + "."
 
 
 
@@ -105,10 +106,10 @@ replace general3 = str_land + " " + "Meine Muttersprache ist" + " " + str_langua
 
 
 * location1
-cap drop str_bundesland 
+cap drop str_bundesland
 decode v_698, gen(str_bundesland)
 
-cap drop str_stadt_land 
+cap drop str_stadt_land
 decode v_696, gen(str_stadt_land)
 replace str_stadt_land = "eher ländlichen" if v_696 == 1
 replace str_stadt_land = "eher städtischen" if v_696 == 2
@@ -127,7 +128,7 @@ replace str_aufgewachsen = v_699
 replace str_aufgewachsen = "Deutschland" if v_697 == 1
 
 
-cap drop str_stadt_land 
+cap drop str_stadt_land
 decode v_696, gen(str_stadt_land_raised)
 
 
@@ -150,7 +151,7 @@ replace str_immigration = "NA" if v_703 == 3
 cap drop location3
 gen str location3 = ""
 replace location3 = "Ich habe auch eine Migrationsgeschichte: Meine" + " " + str_immigration + " " + "sind damals nach Deutschland eingewandert."
-replace location3 = "NA" if v_703 == 3 
+replace location3 = "NA" if v_703 == 3
 
 
 * ---------------------------------------------------------------------------- *
@@ -198,7 +199,7 @@ tostring v_144, gen(str_kids)
 replace str_kids = "keine" if v_144 == 0
 tostring v_707, gen(str_siblings)
 replace str_siblings = "keine" if v_707 == 0
- 
+
 cap drop family3
 gen str family3 = ""
 replace family3 = "Ich habe " + " " + str_kids + " " + "eigene Kinder und" + " " + str_siblings + " " + "Geschwister."
@@ -341,7 +342,7 @@ replace family9 = "" if v_727 == 3
 * <i class="fa-solid fa-money-check-dollar"></i>
 
 * finance1
-cap drop str_schicht_aktuell 
+cap drop str_schicht_aktuell
 decode v_733, gen(str_schicht_aktuell)
 replace str_schicht_aktuell = "oberen Mittelschicht" if str_schicht_aktuell == "obere Mittelschicht"
 replace str_schicht_aktuell = "unteren Mittelschicht" if str_schicht_aktuell == "untere Mittelschicht"
@@ -352,7 +353,7 @@ replace str_schicht_change = "ein Aufstieg" if v_733 > v_734
 replace str_schicht_change = "ein Abstieg" if v_734 > v_733
 replace str_schicht_change = "keine Veränderung" if v_733 == v_734
 
-cap drop str_schicht_zukunft 
+cap drop str_schicht_zukunft
 decode v_735, gen(str_schicht_zukunft)
 replace str_schicht_zukunft = "oberen Mittelschicht" if str_schicht_zukunft == "obere Mittelschicht"
 replace str_schicht_zukunft = "unteren Mittelschicht" if str_schicht_zukunft == "untere Mittelschicht"
@@ -366,7 +367,7 @@ replace finance1 = "Ich zähle mich zur" + " " + str_schicht_aktuell + "." + " "
 
 
 * finance2
-cap drop str_auto 
+cap drop str_auto
 decode v_731, gen(str_auto)
 replace str_auto = "ein eigenes Auto" if v_731 == 1
 replace str_auto = "kein eigenes Auto" if v_731 == 2
@@ -374,7 +375,7 @@ replace str_auto = "kein eigenes Auto" if v_731 == 2
 
 cap drop finance2
 gen str finance2 = ""
-replace finance2 = "Ich besitze" + " " + str_auto + "." 
+replace finance2 = "Ich besitze" + " " + str_auto + "."
 
 
 
@@ -386,7 +387,7 @@ replace str_wohneigentum = "kein eigenes Wohneigentum" if v_730 == 2
 
 cap drop finance3
 gen str finance3 = ""
-replace finance3 = "Ich besitze" + " " + str_wohneigentum + "." 
+replace finance3 = "Ich besitze" + " " + str_wohneigentum + "."
 
 
 
@@ -427,7 +428,7 @@ replace personality1 = "Sich selbst zu beschreiben ist ja oftmals gar nicht so e
 cap drop str_wettkampf
 gen str str_wettkampf = ""
 replace str_wettkampf = "mag es sehr" if v_740 == 1
-replace str_wettkampf = "mag es überhaupt nicht" if v_740 == 2 
+replace str_wettkampf = "mag es überhaupt nicht" if v_740 == 2
 
 cap drop str_perfekt
 gen str str_perfekt = ""
@@ -460,7 +461,7 @@ replace str_workplay = "Freizeit" if v_738 == 2
 
 cap drop personality3
 gen str personality3 = ""
-replace personality3 = "Wenn ich mich zwischen Arbeiten und Freizeit entscheiden müsste, würde ich ganz klar" + " " + str_workplay + " " + "wählen." 
+replace personality3 = "Wenn ich mich zwischen Arbeiten und Freizeit entscheiden müsste, würde ich ganz klar" + " " + str_workplay + " " + "wählen."
 
 
 
@@ -501,69 +502,69 @@ replace personality5 = "Ich bin fasziniert von" + " " + str_faszination + "." + 
 * ---------------------------------------------------------------------------- *
 
 
-*** Verhalten ***
+*** behavior ***
 * <i class="fa-solid fa-head-side"></i>
 
 
-* verhalten1
+* behavior1
 cap drop str_return
 gen str str_return = ""
 replace str_return = "Ich bin ein Mensch, der auch mal Essen im Restaurant zurückgeben lässt, wenn es nicht schmeckt." if v_752 == 1
 replace str_return = "Ich bin kein Mensch, der Essen im Restaurant zurückgeben lässt, wenn es nicht schmeckt." if v_752 == 2
 
-cap drop verhalten1
-gen str verhalten1 = ""
-replace verhalten1 = str_return
+cap drop behavior1
+gen str behavior1 = ""
+replace behavior1 = str_return
 
 
 
 
 
-* verhalten2
+* behavior2
 cap drop str_wegwerfen
 gen str str_wegwerfen = ""
 replace str_wegwerfen = "Ich habe kein Problem damit, Dinge einfach wegzuwerfen oder zu verschenken, wenn ich sie selbst nicht mehr verwende." if v_750 == 1
 replace str_wegwerfen = "Ich habe große Problem damit, Dinge wegzuwerfen oder zu verschenken, sogar dann, wenn ich sie selbst überhaupt nicht mehr verwende." if v_750 == 2
 
-cap drop verhalten2
-gen str verhalten2 = ""
-replace verhalten2 = str_wegwerfen
+cap drop behavior2
+gen str behavior2 = ""
+replace behavior2 = str_wegwerfen
 
 
 
 
 
-* verhalten3
+* behavior3
 cap drop str_sperrmüll
 gen str str_sperrmüll = ""
 replace str_sperrmüll = "Ich finde Sachen, die eine Person nicht mehr brauchen kann, trotzdem noch einen Mehrwert haben können. Ich habe auch selbst schon mal Möbel vom Sperrmüll mit nach Hause genommen." if v_749 == 1
 replace str_sperrmüll = "Ich finde der Recycling-Trend geht manchmal etwas zu weit. Ich würde zumindest nie Möbel vom Sperrmüll mit nach Hause nehmen." if v_749 == 2
 
-cap drop verhalten3
-gen str verhalten3 = ""
-replace verhalten3 = str_sperrmüll
+cap drop behavior3
+gen str behavior3 = ""
+replace behavior3 = str_sperrmüll
 
 
 
 
 
 
-* verhalten4
+* behavior4
 cap drop str_geschenk
 gen str str_geschenk = ""
 replace str_geschenk = "Wenn mir ein Geschenk selbst nicht gefällt, schenke ich es manchmal auch einfach weiter." if v_753 == 1
 replace str_geschenk = "Auch wenn mir ein Geschenk selbst nicht gefällt, würde ich es niemals einfach weiter verschenken." if v_753 == 2
 
-cap drop verhalten4
-gen str verhalten4 = ""
-replace verhalten4 = str_geschenk
+cap drop behavior4
+gen str behavior4 = ""
+replace behavior4 = str_geschenk
 
 
 
 
 
 
-* verhalten5
+* behavior5
 cap drop str_snoozing
 gen str str_snoozing = ""
 replace str_snoozing = "null Mal betätige, sondern sofort aufstehe" if v_748 == 1
@@ -571,33 +572,33 @@ replace str_snoozing = "ein oder zwei Mal betätige bevor ich aufstehe" if v_748
 replace str_snoozing = "dreimal oder häufiger Mal betätige bevor ich aufstehe" if v_748 == 3
 replace str_snoozing = "NA" if v_748 == 99
 
-cap drop verhalten5
-gen str verhalten5 = ""
-replace verhalten5 = "Die Schlummertaste beim Wecker kann ja Fluch und Segen zugleich sein. Bei mir ist es so, dass ich die Schlummertaste normalerweise" + " " + str_snoozing + "."
-replace verhalten5 = "" if v_748 == 99 
+cap drop behavior5
+gen str behavior5 = ""
+replace behavior5 = "Die Schlummertaste beim Wecker kann ja Fluch und Segen zugleich sein. Bei mir ist es so, dass ich die Schlummertaste normalerweise" + " " + str_snoozing + "."
+replace behavior5 = "" if v_748 == 99
 
 
 
 
 
-* verhalten6
+* behavior6
 cap drop str_diebstahl
 gen str str_diebstahl = ""
 replace str_diebstahl = "Ich finde, dass man es mit den Regeln nicht unbedingt immer ganz genau nehmen muss. Ich habe ehrlich gesagt auch schon mal ein Glas aus einer Bar gestohlen." if v_751 == 1
 replace str_diebstahl = "Ich finde, dass auch kleinere Diebstähle kein Kavaliersdelikt sind. Ich habe zum Beispiel noch nie ein Glas aus einer Bar gestohlen." if v_751 == 2
 replace str_diebstahl = "NA." if v_751 == 3
 
-cap drop verhalten6
-gen str verhalten6 = ""
-replace verhalten6 = str_diebstahl
-replace verhalten6 = "" if v_751 == 3
+cap drop behavior6
+gen str behavior6 = ""
+replace behavior6 = str_diebstahl
+replace behavior6 = "" if v_751 == 3
 
 
 
 
 
 
-* verhalten7
+* behavior7
 cap drop str_fluchen
 gen str str_fluchen = ""
 replace str_fluchen = "ich nie" if v_754 == 1
@@ -605,15 +606,15 @@ replace str_fluchen = "auch ich gelegentlich" if v_754 == 2
 replace str_fluchen = "auch ich durchaus oft" if v_754 == 3
 replace str_fluchen = "auch ich regelmäßig" if v_754 == 4
 
-cap drop verhalten7
-gen str verhalten7 = ""
-replace verhalten7 = "Für viele Menschen gehören Schimpfwörter mittlerweile zum Sprachgebrauch dazu. Bei mir ist es so, dass" + " " + str_fluchen + " " + "Schimpfwörter verwende."
+cap drop behavior7
+gen str behavior7 = ""
+replace behavior7 = "Für viele Menschen gehören Schimpfwörter mittlerweile zum Sprachgebrauch dazu. Bei mir ist es so, dass" + " " + str_fluchen + " " + "Schimpfwörter verwende."
 
 
 
 
 
-* verhalten8
+* behavior8
 cap drop str_horoskop
 gen str str_horoskop = ""
 replace str_horoskop = "ich mir mein Horoskop schon gerne jeden Tag durchlese" if v_755 == 1
@@ -621,10 +622,17 @@ replace str_horoskop = "ich mir mein Horoskop zumindest einmal die Woche schon g
 replace str_horoskop = "auch ich mir mein Horoskop gelegentlich schon mal ganz gerne durchlese" if v_755 == 3
 replace str_horoskop = "ich damit nichts anfangen kann und ich mir mein Horoskop wirklich nie durchlese" if v_755 == 4
 
-cap drop verhalten8
-gen str verhalten8 = ""
-replace verhalten8 = "Horoskope sind ja so eine Sache. Ich muss sagen, dass" + " " + str_horoskop + "."
+cap drop behavior8
+gen str behavior8 = ""
+replace behavior8 = "Horoskope sind ja so eine Sache. Ich muss sagen, dass" + " " + str_horoskop + "."
 
+
+* ---------------------------------------------------------------------------- *
+
+*** Geschmack ***
+* <i class="fa-solid fa-star"></i>
+
+// items missing
 
 
 * ---------------------------------------------------------------------------- *
@@ -633,7 +641,7 @@ replace verhalten8 = "Horoskope sind ja so eine Sache. Ich muss sagen, dass" + "
 * <i class="fa-solid fa-head-side-heart"></i>
 
 
-* like1
+* thingsyoudo1
 cap drop str_social_media
 gen str str_social_media = ""
 replace str_social_media = "sehr aktiv" if v_764 == 1
@@ -641,16 +649,16 @@ replace str_social_media = "etwas aktiv" if v_764 == 2
 replace str_social_media = "kaum aktiv" if v_764 == 3
 replace str_social_media = "gar nicht aktiv" if v_764 == 4
 
-cap drop like1
-gen str like1 = ""
-replace like1 = "Ob ich Social Media verwende? Ich würde sagen, dass ich" + " " + str_social_media + " " + "bin."
+cap drop thingsyoudo1
+gen str thingsyoudo1 = ""
+replace thingsyoudo1 = "Ob ich Social Media verwende? Ich würde sagen, dass ich" + " " + str_social_media + " " + "bin."
 
 
 
 
 
 
-* like2
+* thingsyoudo2
 cap drop str_smoke
 gen str str_smoke = ""
 replace str_smoke = "Ich bin Raucher." if v_766 == 1 & v_16 == 2
@@ -662,15 +670,15 @@ replace str_smoke = "Ich bin Nichtraucherin." if v_766 == 3 & v_16 == 1
 replace str_smoke = "Ich bin Nichtraucher, habe aber früher mal geraucht." if v_766 == 4 & v_16 == 2
 replace str_smoke = "Ich bin Nichtraucherin, habe aber früher mal geraucht." if v_766 == 4 & v_16 == 1
 
-cap drop like2
-gen str like2 = ""
-replace like2 = str_smoke
+cap drop thingsyoudo2
+gen str thingsyoudo2 = ""
+replace thingsyoudo2 = str_smoke
 
 
 
 
 
-* like3
+* thingsyoudo3
 cap drop str_sport
 gen str str_sport = ""
 replace str_sport = "auch selbst aktiv Sport. Momentan vor allem:" if v_792 == 0
@@ -709,9 +717,9 @@ replace sport_Angeln = "Angeln; " if v_790 == 1
 replace sport_Andere = v_897 if v_896 == 1
 
 
-cap drop like3
-gen str like3 = ""
-replace like3 = "Ich treibe" + " " + str_sport + " " + sport_Fußball + sport_Baseball + sport_Basketball + sport_Volleyball + sport_Tennis + sport_Eishockey + sport_Cricket + sport_Football + sport_Feldhockey + sport_Radfahren + sport_Leichtathletik + sport_Tischtennis + sport_Laufen + sport_Kampfsport + sport_Klettern + sport_Skifahren + sport_Yoga + sport_Schwimmen + sport_Angeln + sport_Andere
+cap drop thingsyoudo3
+gen str thingsyoudo3 = ""
+replace thingsyoudo3 = "Ich treibe" + " " + str_sport + " " + sport_Fußball + sport_Baseball + sport_Basketball + sport_Volleyball + sport_Tennis + sport_Eishockey + sport_Cricket + sport_Football + sport_Feldhockey + sport_Radfahren + sport_Leichtathletik + sport_Tischtennis + sport_Laufen + sport_Kampfsport + sport_Klettern + sport_Skifahren + sport_Yoga + sport_Schwimmen + sport_Angeln + sport_Andere
 
 
 
@@ -719,32 +727,32 @@ replace like3 = "Ich treibe" + " " + str_sport + " " + sport_Fußball + sport_Ba
 
 
 
-* like4
+* thingsyoudo4
 cap drop str_museum
 gen str str_museum = ""
 replace str_museum = "Ich liebe es ins Museum zu gehen." if v_794 == 1
 replace str_museum = "Ich gehe gern ins Museum, aber nur manchmal." if v_794 == 2
 replace str_museum = "Ich gehe nicht gern ins Museum." if v_794 == 3
 
-cap drop like4
-gen str like4 = ""
-replace like4 = str_museum
+cap drop thingsyoudo4
+gen str thingsyoudo4 = ""
+replace thingsyoudo4 = str_museum
 
 
 
 
 
 
-* like5
+* thingsyoudo5
 cap drop str_tanzen
 gen str str_tanzen = ""
 replace str_tanzen = "Ich liebe es tanzen zu gehen." if v_795 == 1
 replace str_tanzen = "Ich gehe gern tanzen, aber nur manchmal." if v_795 == 2
 replace str_tanzen = "Ich gehe nicht gern tanzen." if v_795 == 3
 
-cap drop like5
-gen str like5 = ""
-replace like5 = str_tanzen
+cap drop thingsyoudo5
+gen str thingsyoudo5 = ""
+replace thingsyoudo5 = str_tanzen
 
 
 
@@ -756,7 +764,7 @@ replace like5 = str_tanzen
 
 
 
-* hobbies1
+* thingsilike1
 cap drop str_musik
 gen str str_musik = ""
 replace str_musik = "Ich liebe es Musik zu hören. Am Liebsten mag ich:" if v_796 == 1 & v_819 != 1
@@ -792,28 +800,28 @@ replace musik_Reggae = "Reggae; " if v_817 == 1
 replace musik_Andere = v_900 if v_899 == 1
 
 
-cap drop hobbies1
-gen str hobbies1 = ""
-replace hobbies1 = str_musik + " " + musik_Blues + musik_Klassik + musik_Country + musik_Rock + musik_HipHop + musik_Latin + musik_Pop + musik_Religiös + musik_Funk + musik_R_B + musik_Rap + musik_Elektronisch + musik_Folk + musik_Jazz + musik_New_Age + musik_Reggae
+cap drop thingsilike1
+gen str thingsilike1 = ""
+replace thingsilike1 = str_musik + " " + musik_Blues + musik_Klassik + musik_Country + musik_Rock + musik_HipHop + musik_Latin + musik_Pop + musik_Religiös + musik_Funk + musik_R_B + musik_Rap + musik_Elektronisch + musik_Folk + musik_Jazz + musik_New_Age + musik_Reggae
 
 
 
 
 
 
-* hobbies2
+* thingsilike2
 cap drop str_musik_liebling
 gen str str_musik_liebling = v_821
 
-cap drop hobbies2
-gen str hobbies2 = ""
-replace hobbies2 = "Ich bin großer Fan von " + " " + str_musik_liebling + "."
+cap drop thingsilike2
+gen str thingsilike2 = ""
+replace thingsilike2 = "Ich bin großer Fan von " + " " + str_musik_liebling + "."
 
 
 
 
 
-* hobbies3
+* thingsilike3
 cap drop str_filme
 gen str str_filme = ""
 replace str_filme = "Ich bin ein großer Filmfan. Am Liebsten mag ich Filme aus dem Genre:" if v_822 == 1 & v_840 != 1
@@ -849,24 +857,24 @@ replace filme_Surreal = "Surreal; " if v_838 == 1
 replace filme_Andere = v_903 if v_902 == 1
 
 
-cap drop hobbies3
-gen str hobbies3 = ""
-replace hobbies3 = str_filme + " " + filme_Action + filme_Abenteuer + filme_Komödie + filme_Krimi + filme_Drama + filme_Fantasy + filme_Historisch + filme_Horror + filme_Mystery + filme_Politisch + filme_Romantik + filme_SciFi + filme_Thriller + filme_Krieg + filme_Western + filme_Surreal
+cap drop thingsilike3
+gen str thingsilike3 = ""
+replace thingsilike3 = str_filme + " " + filme_Action + filme_Abenteuer + filme_Komödie + filme_Krimi + filme_Drama + filme_Fantasy + filme_Historisch + filme_Horror + filme_Mystery + filme_Politisch + filme_Romantik + filme_SciFi + filme_Thriller + filme_Krieg + filme_Western + filme_Surreal
 
 
 
 
 
-* hobbies4
+* thingsilike4
 cap drop str_filme_liebling
 gen str str_filme_liebling = v_842
 
 cap drop str_schauspieler_liebling
 gen str str_schauspieler_liebling = v_843
 
-cap drop hobbies4
-gen str hobbies4 = ""
-replace hobbies4 = "Mein absoluter Lieblingsfilm ist" + " " + "'" + str_filme_liebling + "'" + " " + "und am liebsten sehe ich Filme mit" + " " + str_schauspieler_liebling + "."
+cap drop thingsilike4
+gen str thingsilike4 = ""
+replace thingsilike4 = "Mein absoluter Lieblingsfilm ist" + " " + "'" + str_filme_liebling + "'" + " " + "und am liebsten sehe ich Filme mit" + " " + str_schauspieler_liebling + "."
 
 
 
@@ -878,7 +886,7 @@ replace hobbies4 = "Mein absoluter Lieblingsfilm ist" + " " + "'" + str_filme_li
 
 
 
-* hobbies5
+* thingsilike5
 cap drop str_fan
 gen str str_fan = ""
 replace str_fan = "Ich bin ein riesiger Sportfan. Am meisten kann ich mich begeistern für:" if v_844 == 1 & v_862 != 1
@@ -914,31 +922,31 @@ replace fan_Boxen = "Boxen; " if v_860 == 1
 replace fan_Andere = v_906 if v_905 == 1
 
 
-cap drop hobbies5
-gen str hobbies5 = ""
-replace hobbies5 = str_fan + " " + fan_Golf + fan_Fußball + fan_Baseball + fan_Basketball + fan_Volleyball + fan_Tennis + fan_Eishockey + fan_Cricket + fan_American_Football + fan_Feldhockey + fan_Nascar + fan_Formel_1 + fan_Radfahren + fan_Darts + fan_Snooker + fan_Boxen + fan_Andere
+cap drop thingsilike5
+gen str thingsilike5 = ""
+replace thingsilike5 = str_fan + " " + fan_Golf + fan_Fußball + fan_Baseball + fan_Basketball + fan_Volleyball + fan_Tennis + fan_Eishockey + fan_Cricket + fan_American_Football + fan_Feldhockey + fan_Nascar + fan_Formel_1 + fan_Radfahren + fan_Darts + fan_Snooker + fan_Boxen + fan_Andere
 
 
 
 
-* hobbies6
+* thingsilike6
 cap drop str_fan_liebling
 gen str str_fan_liebling = v_864
 
-cap drop hobbies6
-gen str hobbies6 = ""
-replace hobbies6 = "Ich bin großer Fan von" + " " + str_fan_liebling + "."
-replace hobbies6 = "" if str_fan_liebling == "-66"
+cap drop thingsilike6
+gen str thingsilike6 = ""
+replace thingsilike6 = "Ich bin großer Fan von" + " " + str_fan_liebling + "."
+replace thingsilike6 = "" if str_fan_liebling == "-66"
 
 
 
 
 
 
-* hobbies7
+* thingsilike7
 cap drop str_fernsehen
 gen str str_fernsehen = ""
-replace str_fernsehen = "Ich schaue auch gerne mal Fernsehen." if v_865 == 1 
+replace str_fernsehen = "Ich schaue auch gerne mal Fernsehen." if v_865 == 1
 replace str_fernsehen = "Fernsehen schaue ich momentan eigentlich gar nicht." if v_865 == 2
 
 cap drop str_fernsehen_liebling
@@ -946,9 +954,9 @@ gen str str_fernsehen_liebling = v_866
 replace str_fernsehen_liebling = "Am besten gefällt mir im Moment" + " " + "'" + str_fernsehen_liebling + "'" + "."
 replace str_fernsehen_liebling = "" if v_866 == "-66"
 
-cap drop hobbies7
-gen str hobbies7 = ""
-replace hobbies7 = str_fernsehen + " " + str_fernsehen_liebling
+cap drop thingsilike7
+gen str thingsilike7 = ""
+replace thingsilike7 = str_fernsehen + " " + str_fernsehen_liebling
 
 
 
@@ -956,10 +964,10 @@ replace hobbies7 = str_fernsehen + " " + str_fernsehen_liebling
 
 
 
-* hobbies8
+* thingsilike8
 cap drop str_buch
 gen str str_buch = ""
-replace str_buch = "Ich genieße es auch sehr mich in ein gutes Buch zu vertiefen." if v_867 == 1 
+replace str_buch = "Ich genieße es auch sehr mich in ein gutes Buch zu vertiefen." if v_867 == 1
 replace str_buch = "Bücher lese ich momentan so gut wie gar nicht." if v_867 == 2
 
 cap drop str_buch_liebling
@@ -967,9 +975,9 @@ gen str str_buch_liebling = v_868
 replace str_buch_liebling = "Besonders gut gefällt mir im Moment" + " " + "'" + str_buch_liebling + "'" + "."
 replace str_buch_liebling = "" if v_868 == "-66"
 
-cap drop hobbies8
-gen str hobbies8 = ""
-replace hobbies8 = str_buch + " " + str_buch_liebling
+cap drop thingsilike8
+gen str thingsilike8 = ""
+replace thingsilike8 = str_buch + " " + str_buch_liebling
 
 
 
@@ -978,10 +986,10 @@ replace hobbies8 = str_buch + " " + str_buch_liebling
 
 
 
-* hobbies9
+* thingsilike9
 cap drop str_web
 gen str str_web = ""
-replace str_web = "Neue Medien nutze ich auch sehr gerne und folge selbst auch einigen Webkanälen." if v_869 == 1 
+replace str_web = "Neue Medien nutze ich auch sehr gerne und folge selbst auch einigen Webkanälen." if v_869 == 1
 replace str_web = "Dieser Hype um diese ganzen neuen Webanäle und Plattformen lässt mich ziemlich kalt. Ich folge auf jeden Fall niemandem." if v_869 == 2
 
 cap drop str_web_liebling
@@ -989,9 +997,9 @@ gen str str_web_liebling = v_870
 replace str_web_liebling = "Insbesondere interessiere ich mich für" + " " + "'" + str_web_liebling + "'" + "."
 replace str_web_liebling = "" if v_870 == "-66"
 
-cap drop hobbies9
-gen str hobbies9 = ""
-replace hobbies9 = str_web + " " + str_web_liebling
+cap drop thingsilike9
+gen str thingsilike9 = ""
+replace thingsilike9 = str_web + " " + str_web_liebling
 
 
 
@@ -999,10 +1007,10 @@ replace hobbies9 = str_web + " " + str_web_liebling
 
 
 
-* hobbies10
+* thingsilike10
 cap drop str_video
 gen str str_video = ""
-replace str_video = "Ab und zu spiele ich auch ganz gerne Videospiele." if v_871 == 1 
+replace str_video = "Ab und zu spiele ich auch ganz gerne Videospiele." if v_871 == 1
 replace str_video = "Videospiele und solchen Sachen sind nichts für mich." if v_871 == 2
 
 cap drop str_video_liebling
@@ -1010,9 +1018,9 @@ gen str str_video_liebling = v_872
 replace str_video_liebling = "Am meisten Spaß macht mir" + " " + "'" + str_video_liebling + "'" + "."
 replace str_video_liebling = "" if v_872 == "-66"
 
-cap drop hobbies10
-gen str hobbies10 = ""
-replace hobbies10 = str_video + " " + str_video_liebling
+cap drop thingsilike10
+gen str thingsilike10 = ""
+replace thingsilike10 = str_video + " " + str_video_liebling
 
 
 
@@ -1020,10 +1028,10 @@ replace hobbies10 = str_video + " " + str_video_liebling
 
 
 
-* hobbies11
+* thingsilike11
 cap drop str_kreativ
 gen str str_kreativ = ""
-replace str_kreativ = "Ich liebe es mich kreativ zu betätigen." if v_873 == 1 
+replace str_kreativ = "Ich liebe es mich kreativ zu betätigen." if v_873 == 1
 replace str_kreativ = "Kreative Tätigkeiten wie malen oder singen sind nicht gerade mein Ding." if v_873 == 2
 
 cap drop str_kreativ_liebling
@@ -1031,9 +1039,9 @@ gen str str_kreativ_liebling = v_874
 replace str_kreativ_liebling = "Am meisten Freude macht mir" + " " + "'" + str_kreativ_liebling + "'" + "."
 replace str_kreativ_liebling = "" if v_874 == "-66"
 
-cap drop hobbies11
-gen str hobbies11 = ""
-replace hobbies11 = str_kreativ + " " + str_kreativ_liebling
+cap drop thingsilike11
+gen str thingsilike11 = ""
+replace thingsilike11 = str_kreativ + " " + str_kreativ_liebling
 
 
 
@@ -1050,5 +1058,5 @@ gen str quirk1 = v_876
 
 * ---------------------------------------------------------------------------- *
 * ---------------------------------------------------------------------------- *
-
-save "$data/Data_with_printing_rules_20220708", replace
+export delimited using "C:/Users/sprenmax/Seafile/projects/matched-social-media-profile/testdata.csv", replace
+//save "$data/Data_with_printing_rules_20220708", replace
