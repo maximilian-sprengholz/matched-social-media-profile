@@ -200,7 +200,7 @@ matchparams <- dict(list(
 
     # Family
     family = dict(list(
-        hl = list(label="Familie", icon="people-group"),
+        hl = list(label="Familie", icon="fa-people-group"),
         items = dict(list(
             marital = dict(list(
                 weight = function(value=NA, common=0) {

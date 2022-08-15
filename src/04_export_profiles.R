@@ -176,6 +176,7 @@ You need to provide a dummy indicating if a profile should be exported for the
 match or not. In the following, I assumed that every match with the highest
 similarity score is to be exported.
 '
+
 # select a match based on some rule (here: highest simscore)
 df_match_best <- df_merged %>%
         group_by_at("lfdn") %>% slice(which.max(match_simscore)) %>%
