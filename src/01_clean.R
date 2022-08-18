@@ -69,10 +69,6 @@ df <- rename(df, age = v_15)
 df <- rename(df, initials = v_686)
 
 # gender / othergender
-'
-Note for matching: Implement extra score for "othergender" based on eyes value
-(! Männlich, Weiblich).
-'
 df <- rename(df, gender = v_16)
 
 # eyes / othereyes

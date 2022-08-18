@@ -173,15 +173,19 @@ prioritize <- function(df, maxitems=45) {
 ### RUN ###
 '
 You need to provide a dummy indicating if a profile should be exported for the
-match or not. In the following, I assumed that every match with the highest
-similarity score is to be exported.
+match or not (match_export=1). In the following, I assumed that every match with
+the highest similarity score is to be exported.
 '
 
 # select a match based on some rule (here: highest simscore)
 df_match_best <- df_merged %>%
         group_by_at("lfdn") %>% slice(which.max(match_simscore)) %>%
-        select(c(lfdn)) %>% mutate(match_export = 1)
-df_merged <- merge(df_merged, df_match_best, by="lfdn", all=TRUE)
+        select(c(lfdn, match_lfdn)) %>% mutate(match_export = 1)
+df_merged <- merge(
+    df_merged, df_match_best,
+    by=c("lfdn", "match_lfdn"),
+    all.x=TRUE, all.y=FALSE
+    )
 
 # export
 profiles <- exporter(

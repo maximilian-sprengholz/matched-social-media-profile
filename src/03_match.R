@@ -15,9 +15,12 @@ What needs to be accomodated:
     also cover the case when variables are not set because of a filter
 
 Changes 2022-07-08:
-
 - match, but return just a match indicator, the id of the matched person and the
   score (just point to the matched person data row)
+
+Changes 2022-08-18:
+- Return dummy for each variable with a match (match_[varname]=0/1)
+
 '
 
 ### FUNCTIONS ###
@@ -52,7 +55,7 @@ matcher <- function(
               ,]
             df_p2 <- df_p2[sample(nrow(df_p2)),]
 
-            # maximum no of matches allowed
+            # count toward maximum no of matches allowed
             nmatches_simlow <- 0
             nmatches_simhigh <- 0
 
@@ -68,7 +71,7 @@ matcher <- function(
                         row_p2 <- tibble(...)
 
                         ### Step 3: match variables, gather match scores
-                        row_scores <- pmap_dfr(
+                        match_results <- pmap_dfr(
                             list(row_p1, row_p2, names(row_p2)),
                             function(p1, p2, matchvar) {
 
@@ -88,6 +91,12 @@ matcher <- function(
                                     }
 
                                     # match and score
+                                    '
+                                     Note: Change default of fuzzymaxdist here!
+
+                                     We return the score and a dummy indicating
+                                     if matchvar was matched in a dataframe.
+                                    '
                                     score <- match_values(
                                         p1, p2,
                                         matchvar, matchvarparams,
@@ -96,13 +105,18 @@ matcher <- function(
                                         matchvarparams$get("fuzzy", FALSE),
                                         matchvarparams$get("fuzzymaxdist", 4)
                                         )
-
+                                    match <- ifelse(score>0 && !is.na(score), 1, 0)
+                                    result <- data.frame (
+                                        matchvar = matchvar,
+                                        score = score,
+                                        match = match
+                                        )
                                     }
                                 }
                             )
 
                         # sum scores, return match only if similarity high or low
-                        simscore <- rowSums(row_scores)
+                        simscore <- colSums(match_results['score'], na.rm=TRUE)
                         if (simscore<simlow || simscore>simhigh) {
                             # count
                             if (simscore<simlow) {
@@ -110,17 +124,20 @@ matcher <- function(
                             } else {
                                 nmatches_simhigh <<- nmatches_simhigh + 1
                                 }
-                            # return person id (for merge), match id, match simscore
-                            row_matched <- data.frame (
-                                row_p1[idcol],
-                                row_p2[idcol],
-                                simscore
+                            # return match dummies (extract from match_results col)
+                            row_matched <- match_results[,c('matchvar','match')] %>%
+                                pivot_wider(
+                                    names_from = matchvar,
+                                    values_from = match
+                                    )
+                            colnames(row_matched) <- paste(
+                                "match", colnames(row_matched), sep="_"
                                 )
-                            # naming quirk when dfs passed
-                            colnames(row_matched) <- c(
-                                idcol,
-                                paste0("match_", idcol),
-                                "match_simscore")
+                            # add person id (for merge), match id, match simscore
+                            row_matched[idcol] <- row_p1[idcol]
+                            row_matched[paste0("match_", idcol)] <- row_p2[idcol]
+                            row_matched["match_simscore"] <- simscore
+                            # return
                             return(row_matched)
                         } else {
                             return(NULL)
@@ -203,7 +220,10 @@ match_score <- function(matchvar, matchvarparams, matches) {
         score <- weight(value=matches[1], common=length(matches))
         if (length(score)==0) {
             # debug missing scores
-            message(paste0("No score found for ", matchvar, " [", matches[1], "]. Score set to 0."))
+            message(paste0(
+                "No score found for ", matchvar, " [", matches[1],
+                "]. Score set to 0."
+                ))
             score <- 0
             }
     } else if (is.numeric(weight)) {
@@ -229,6 +249,7 @@ You could also merge it in wide format, though, an approach for which is
 commented out below.
 '
 df_merged <- merge(df, df_matched, by="lfdn", all=TRUE)
+
 # ### wide format
 # # index matches by person
 # df_matched <- df_matched %>% group_by(lfdn) %>% mutate(match_no = row_number(lfdn))
