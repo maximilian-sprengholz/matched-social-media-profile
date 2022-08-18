@@ -72,8 +72,8 @@ matchparams <- dict(list(
                 )),
             righthanded = dict(list(
                 weight = function(value=NA, common=0) {
-                    if (value == "Rechtshï¿½nder") return(5)
-                    if (value == "Linkshï¿½nder") return(20)
+                    if (value == "Rechtshänder") return(5)
+                    if (value == "Linkshänder") return(20)
                     return(30)
                     }
                 )),
@@ -185,7 +185,7 @@ matchparams <- dict(list(
                 weight = function(value=NA, common=0) {
                     if (value == "Nein") return(0)
                     if (value == "Ja, Eltern") return(25)
-                    if (value == "Ja, Groï¿½eltern") return(15)
+                    if (value == "Ja, Großeltern") return(15)
                     }
                 )),
             secondgencountry = dict(list(
@@ -325,8 +325,8 @@ matchparams <- dict(list(
                 )),
             studentdebt = dict(list(
                 weight = function(value=NA, common=0) {
-                    if (value == "Ja, und sie sind groï¿½") return(30)
-                    if (value == "Ja, aber sie sind ï¿½berschaubar") return(20)
+                    if (value == "Ja, und sie sind groß") return(30)
+                    if (value == "Ja, aber sie sind überschaubar") return(20)
                     if (value == "Nein, ich habe sie abbezahlt") return(15)
                     if (value == "Nein, ich hatte nie welche") return(8)
                     }
@@ -393,7 +393,7 @@ matchparams <- dict(list(
 
     # Personality
     personality = dict(list(
-        hl = list(label="Persï¿½nlichkeit", icon="fa-face-smile"),
+        hl = list(label="Persönlichkeit", icon="fa-face-smile"),
         items = dict(list(
             workorplay = dict(list(
                 weight = function(value=NA, common=0) {
@@ -494,13 +494,13 @@ matchparams <- dict(list(
                     if (value == "Nie") return(25)
                     if (value == "Gelegentlich") return(20)
                     if (value == "Oft") return(20)
-                    if (value == "Regelmï¿½ï¿½ig") return(30)
+                    if (value == "Regelmäßig") return(30)
                     }
                 )),
             readhoroscope = dict(list(
                 weight = function(value=NA, common=0) {
-                    if (value == "Tï¿½glich") return(30)
-                    if (value == "Wï¿½chentlich") return(15)
+                    if (value == "Täglich") return(30)
+                    if (value == "Wöchentlich") return(15)
                     if (value == "Gelegentlich") return(8)
                     if (value == "Nie") return(10)
                     }
@@ -537,7 +537,7 @@ matchparams <- dict(list(
             spicyfood = dict(list(
                 weight = function(value=NA, common=0) {
                     if (value == "Ich mag kein scharfes Essen") return(12)
-                    if (value == "Wï¿½rzig, aber nicht zu viel") return(10)
+                    if (value == "Würzig, aber nicht zu viel") return(10)
                     if (value == "Scharf") return(15)
                     if (value == "Sehr scharf") return(22)
                     }
@@ -591,7 +591,7 @@ matchparams <- dict(list(
                     if (value == "Ja") return(20)
                     if (value == "Ja, aber nur in Gesellschaft") return(20)
                     if (value == "Nein") return(20)
-                    if (value == "Nein, ich habe aufgehï¿½rt") return(25)
+                    if (value == "Nein, ich habe aufgehört") return(25)
                     }
                 )),
             sportdo = dict(list(
@@ -783,8 +783,7 @@ matchparams <- dict(list(
                     }
                 ))
             ))
-        )),
-
+        ))
     # Quirk
     # quirk = dict(list(
     #     hl = list(label="Ein interessanter Fakt ï¿½ber mich", icon="fa-face-surprise"),

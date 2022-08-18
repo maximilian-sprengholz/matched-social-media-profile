@@ -94,8 +94,9 @@ matcher <- function(
                                     '
                                      Note: Change default of fuzzymaxdist here!
 
-                                     We return the score and a dummy indicating
-                                     if matchvar was matched in a dataframe.
+                                     We return a dataframe with 3 columns:
+                                     Matchvar, score and a dummy indicating
+                                     if matchvar was matched .
                                     '
                                     score <- match_values(
                                         p1, p2,

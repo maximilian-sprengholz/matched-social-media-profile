@@ -88,7 +88,6 @@
     }
 
     div.info-group {
-        margin: 20px 20px 0 0px;
         border: 1px solid #f0f0f0;
         border-radius: 6px;
         flex-grow: 2;
@@ -104,7 +103,17 @@
         background-color: #f5f5f5;
     }
 
-    #general div.info-group-head {
+    #demography, #location, #family, #finance {
+        max-width: calc(50% - 12px)
+    }
+
+    @media (max-width: 800px) {
+        #demography, #location, #family, #finance {
+            max-width: 100%
+        }
+    }
+
+    #demography div.info-group-head {
         color: #5F4690;
     }
 
@@ -170,10 +179,6 @@
     li {
         margin-bottom: 0.16rem;
     }
-
-
-
-    /*#994E95,#666666*/
 
     </style>
 
