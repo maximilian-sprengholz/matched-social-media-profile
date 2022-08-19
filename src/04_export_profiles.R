@@ -4,6 +4,8 @@
 #
 ################################################################################
 
+### PARAMETERS ###
+source("src/02_matchparams.R")
 
 ### FUNCTIONS ###
 
@@ -11,13 +13,14 @@ exporter <- function(
         df,
         matchparams,
         idcol="lfdn", # person id, NUMERIC (change as.numeric to as.character if not)
+        export_indicator, # dummy indicating which observations to be exported
         path_dir,
         valuesNA
         ) {
     '
     - Wrapper function
     - Input df:
-      - With indicator "match_export" (bool)
+      - With indicator "profile_match_export" (bool)
       - Enumerated print strings for the respective printing blocks (=HTML divs
         of the item groups, e.g. family). These have to be generated beforehand,
         meaning that the cleaning/combining complexity is no longer part of the
@@ -33,8 +36,8 @@ exporter <- function(
             colnames(df)
             )
         ]
-    df <- df[, c(idcol, paste0("match_", idcol), "match_export", print_set)]
-    df_match_export <- df %>% slice(which(match_export==1)) # those to be exported
+    df <- df[, c(idcol, paste0("match_", idcol), export_indicator, print_set)]
+    df_match_export <- df[df[export_indicator]==1,] # those to be exported
     df_match_export <- df_match_export %>%
         pmap_df(function(...) {
             # person for which we export a matched profile
@@ -53,7 +56,7 @@ exporter <- function(
                 matchparams=matchparams,
                 valuesNA=valuesNA)
             # return url (only thing stored, to be merged to df)
-            return(data.frame(idcol = df_row[1,idcol], profile_url = path_file))
+            return(data.frame(idcol = df_row[1,idcol], match_profile_url = path_file))
             })
     }
 
@@ -68,9 +71,6 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
     # drop everything from row that is NA according to our spec
     df_match_row <- df_match_row[colSums(!is.na(df_match_row)) > 0]
     df_match_row <- df_match_row[,which(!(df_match_row[1,] %in% valuesNA))]
-
-    # prioritize (NOT ACTIVE ATM)
-    df_match_row <- prioritize(df_match_row)
 
     ### gather header content
     content_header <- ""
@@ -103,6 +103,8 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
             grepl(paste0(group, "[0-9]+"), colnames(df_match_row))
             ]
         if (length(item_set)>0) {
+            # randomly select print subset
+            item_set <- select_subset(group, matchparams, item_set)
             # container start
             content_main[group] <- paste0(
                 '<div id="',
@@ -141,60 +143,44 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
     stri_write_lines(content, path_file)
 }
 
-prioritize <- function(df, maxitems=45) {
+select_subset <- function(group, matchparams, item_set) {
     '
-    This function takes a df row of print strings as argument and pops items
-    (columns) based on defined priority rules.
-
-    Example: Check the total df length and pop item from 1 to n from the
-    pop_order vector until maximum length met. Item names are the column names
-    of the print strings (e.g. demography1) in the df. Not active right now,
-    pop_order random!
+    This function takes a set of available items per item group and returns
+    a random selection which will be printed in the profile.
     '
-    # if (ncol(df)>maxitems) {
-    #     pop_order <- c(
-    #         "family9", "family8", "family7",
-    #         "finance3",
-    #         "personality5", "personality4",
-    #         "behavior8",
-    #         "taste5",
-    #         "thingsyoudo5", "thingsyoudo4",
-    #         "thingsilike11", "thingsilike10", "thingsilike9", "thingsilike8"
-    #         )
-    #     for (item in intersect(pop_order, colnames(df))) {
-    #         df <- df[!(names(df) %in% c(item))]
-    #         if (ncol(df)==maxitems) break
-    #         }
-    #     }
-    return(df)
+    printsubset <- matchparams$get(group)$get("printsubset")
+    if (length(printsubset$subgroups)>1) {
+        item_set <- intersect(
+            item_set,
+            unlist(sample(printsubset$subgroups, printsubset$max))
+        )
+    } else {
+        item_set <- sample(item_set, printsubset$max)
+        }
+    return(item_set)
     }
 
 
-### RUN ###
+### RUN ########################################################################
 '
-You need to provide a dummy indicating if a profile should be exported for the
-match or not (match_export=1). In the following, I assumed that every match with
-the highest similarity score is to be exported.
+You need to provide a export_indicator=dummy indicating if a profile should be
+exported for the match or not. Dummy created in 03_match.R (match_profile_export).
 '
 
-# select a match based on some rule (here: highest simscore)
-df_match_best <- df_merged %>%
-        group_by_at("lfdn") %>% slice(which.max(match_simscore)) %>%
-        select(c(lfdn, match_lfdn)) %>% mutate(match_export = 1)
-df_merged <- merge(
-    df_merged, df_match_best,
-    by=c("lfdn", "match_lfdn"),
-    all.x=TRUE, all.y=FALSE
-    )
+# import matched data
+df <- read_feather(paste0(wd, "/data/post_match.feather"))
 
 # export
 profiles <- exporter(
-    df=df_merged,
+    df=df,
     matchparams=matchparams,
-    path_dir=paste0(wd,"/profiles/"), # where to store profiles
-    valuesNA=c("-99", "-66", ".", "", "NA") # print string values no to export
+    export_indicator="match_profile_export",
+    path_dir=paste0(wd,"/profiles/"), # where to store the profiles
+    valuesNA=c("-99", "-66", ".", "", "NA", NA) # print string values no to export
     )
 
 # merge back to df
-df_merged <- merge(df_merged, profiles, by="lfdn", all=TRUE)
-df_merged[,c("lfdn", "match_lfdn", "profile_url")]
+df <- merge(df, profiles, by="lfdn", all=TRUE)
+
+# save (might be HUGE if match no. is not restricted!)
+write_feather(df, paste0(wd, "/data/post_export.feather"))
