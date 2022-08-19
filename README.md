@@ -11,8 +11,13 @@ For an experiment in the second wave of a panel survey, we use individual social
 ├── .gitignore
 ├── LICENSE.md
 ├── README.md
+├── data               <- data (input and output)
+├── profiles           <- exported profiles
 └── src                <- Source code
 ```
+
+## Usage
+Needs `R` and several libraries, see and start from `00_master.R`.
 
 ## License
 
