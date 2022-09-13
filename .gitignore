@@ -1,1 +1,6 @@
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+/env
+src/.Rhistory
 .Rhistory

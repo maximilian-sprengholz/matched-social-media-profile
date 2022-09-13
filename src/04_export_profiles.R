@@ -20,7 +20,7 @@ exporter <- function(
     '
     - Wrapper function
     - Input df:
-      - With indicator "profile_match_export" (bool)
+      - With export indicator (bool), currently "match_profile_export"
       - Enumerated print strings for the respective printing blocks (=HTML divs
         of the item groups, e.g. family). These have to be generated beforehand,
         meaning that the cleaning/combining complexity is no longer part of the
@@ -30,14 +30,10 @@ exporter <- function(
 
     # for each person and match, export match profile and add file name/url to df;
     # fetch info via match_id (match_lfdn), use only print strings and id info
-    print_set <- colnames(df)[
-        grepl(
-            paste(c("header", unlist(matchparams$keys())), collapse="[0-9]+|"),
-            colnames(df)
-            )
-        ]
-    df <- df[, c(idcol, paste0("match_", idcol), export_indicator, print_set)]
-    df_match_export <- df[df[export_indicator]==1,] # those to be exported
+    df_match_export <- df[
+        df[export_indicator]==1 & !is.na(df[export_indicator])
+        ,
+        ] # those to be exported
     df_match_export <- df_match_export %>%
         pmap_df(function(...) {
             # person for which we export a matched profile
@@ -50,17 +46,18 @@ exporter <- function(
             path_file <- paste0(path_dir, df_row[1,idcol], ".html")
             # export profile
             export_values(
+                df_row,
                 df_match_row,
-                idcol=idcol,
+                idcol,
                 path_file,
-                matchparams=matchparams,
-                valuesNA=valuesNA)
+                matchparams,
+                valuesNA)
             # return url (only thing stored, to be merged to df)
             return(data.frame(idcol = df_row[1,idcol], match_profile_url = path_file))
             })
     }
 
-export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA) {
+export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, valuesNA) {
     '
     - References are mostly hard-coded (e.g. header1 for intials). Bear in mind
       when changing the references.
@@ -70,7 +67,7 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
 
     # drop everything from row that is NA according to our spec
     df_match_row <- df_match_row[colSums(!is.na(df_match_row)) > 0]
-    df_match_row <- df_match_row[,which(!(df_match_row[1,] %in% valuesNA))]
+    df_match_row <- df_match_row[, which(!(df_match_row[1, ] %in% valuesNA))]
 
     ### gather header content
     content_header <- ""
@@ -98,13 +95,13 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
     # for keys { for keys not in header_set {PRINT}}
     content_main <- list() # gather group content in list, collapse later
     for (group in unlist(matchparams$keys())) {
-        # check if not empty
-        item_set <- colnames(df_match_row)[
+        # get all print strings (e.g. demography1, 2, ...); check if not empty
+        item_set <- sort(colnames(df_match_row)[
             grepl(paste0(group, "[0-9]+"), colnames(df_match_row))
-            ]
-        if (length(item_set)>0) {
+            ])
+        if (length(item_set) > 0) {
             # randomly select print subset
-            item_set <- select_subset(group, matchparams, item_set)
+            item_set <- select_subset(group, matchparams, item_set, df_row)
             # container start
             content_main[group] <- paste0(
                 '<div id="',
@@ -143,23 +140,85 @@ export_values <- function(df_match_row, idcol, path_file, matchparams, valuesNA)
     stri_write_lines(content, path_file)
 }
 
-select_subset <- function(group, matchparams, item_set) {
+select_subset <- function(group, matchparams, item_set, df_row) {
     '
-    This function takes a set of available items per item group and returns
-    a random selection which will be printed in the profile.
+    This function selects items for print based on their (combined) similarity
+    score and the type of match (minimum vs. maximum similarity) from the passed 
+    item set which contains all non-empty print strings per group (e.g. demography).
     '
+
+    # get params
     printsubset <- matchparams$get(group)$get("printsubset")
-    if (length(printsubset$subgroups)>1) {
-        item_set <- intersect(
-            item_set,
-            unlist(sample(printsubset$subgroups, printsubset$max))
-        )
+
+    # create df with print items that is sortable by simscore sums
+    # check if items are grouped further (thingsilike, requires double unlist)
+    if (length(printsubset$subgroups) > 1) {
+        # select groups as rows
+        df_item_set <- data.frame(item = names(printsubset$subgroups))
+        # sum over groups x match vars per print item
+        df_item_set$simscore <- sapply(df_item_set$item, function(item) {
+            item_scores <- intersect(
+                paste0(unlist(printsubset$map[unlist(printsubset$subgroups[item])]), "_score"),
+                colnames(df_row)
+                )
+            if (!all(is.na(item_scores))) {
+                simscore <- rowSums(df_row[, item_scores], na.rm=TRUE)
+            } else {
+                simscore <- NA
+                }
+            return(simscore)
+            })
     } else {
-        item_set <- sample(item_set, printsubset$max)
+        # select print items as rows
+        df_item_set <- data.frame(item = item_set)
+        # sum over match var scores per print item
+        df_item_set$simscore <- sapply(df_item_set$item, function(item) {
+            item_scores <- intersect(
+                paste0(unlist(printsubset$map[item]), "_score"),
+                colnames(df_row)
+                )
+            if (!all(is.na(item_scores))) {
+                simscore <- rowSums(df_row[, item_scores], na.rm=TRUE)
+            } else {
+                simscore <- NA
+                }
+            return(simscore)
+            })
+        }
+    
+    # sort by score, random order when scores are equal
+    # select x best/worst matches from items (if there is room for selection)
+    if (df_row[1, "match_nonpolsim"] == 1) {
+        # best -> decreasing
+        df_item_set <- df_item_set[
+            order(
+                -df_item_set$simscore, 
+                sample(nrow(df_item_set), nrow(df_item_set)),
+                na.last = TRUE
+                )
+            ,
+            ]
+    } else {
+        # worst -> increasing
+        df_item_set <- df_item_set[
+            order(
+                df_item_set$simscore, 
+                sample(nrow(df_item_set), nrow(df_item_set)),
+                na.last = TRUE
+                )
+            ,
+            ]
+        }
+    if (nrow(df_item_set) >= printsubset$max) df_item_set <- df_item_set[1:printsubset$max,]
+    
+    # return subselection of item_set to be printed (expand groups if necessary)
+    if (length(printsubset$subgroups) > 1) {
+        item_set <- intersect(item_set, unlist(printsubset$subgroups[unlist(df_item_set["item"])]))
+    } else {
+        item_set <- intersect(item_set, unlist(df_item_set["item"]))
         }
     return(item_set)
     }
-
 
 ### RUN ########################################################################
 '

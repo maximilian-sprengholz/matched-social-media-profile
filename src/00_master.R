@@ -21,14 +21,14 @@ library(feather)
 ### definitions
 set.seed(42)
 `%!in%` <- Negate(`%in%`)
-wd <- 'C:/Users/sprenmax/Seafile/projects/matched-social-media-profile'
+wd <- '/home/max/Seafile/Projects/matched-social-media-profile'
 setwd(wd)
 
 ### run
 
 # sample data (use smaller subset to speed up matching)
-df <- read_csv(paste0(wd, "/data/testdata_2022-08-18.csv"))
-df <- df[1:100,]
+df <- read_csv(paste0(wd, "/data/testdata_2022-09-07.csv"))
+df <- df[1:20,]
 
 # clean
 source("src/01_clean.R")

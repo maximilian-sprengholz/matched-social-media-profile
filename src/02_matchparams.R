@@ -6,8 +6,13 @@ The dictionary contains all info necessary to:
 
 hl (list): list the label and icon (fa ref) displayed
            (id of group div = group key, e.g. demography)
-printsubset (list): defines subsetting the printed items according to your
-                    rules, either subgroup or item (=subgroup NA) and max number
+printsubset (list): defines subsetting the printed items according to our rules:
+    - subgroups (atomic vector): set if selection should be based on group of 
+      items instead of single items
+    - map (list): maps correspondence between print strings and matching vars, 
+      allows to prioritize by sum of simscores when matchvars have been combined 
+      in print strings
+    - max: max number of items (or groups when subgroups!=NA) printed
 items (dict): list of all the variables belonging to that group;
               all items also a dict
 
@@ -35,7 +40,34 @@ Comments:
   though, so no idea what the issue is exactly. At the moment runs fine after
   inputting everzthing in R Studio...
 
-The dict can be extended to contain any other parameters you think are necessary.
+The dict can be extended to contain any other parameters.
+
+
+MATCHVAR DIFFERENCES TO BIALETTI ET AL.:
+----------------------------------------
+
+[u] unavailable in dataset
+[r] redundant/unused
+[m] merged with other (main) variable
+
+birthdayDate [u]
+birthyear [r]
+birthmonth [u]
+birthday [u]
+zodiac [u]
+agegroup [r]
+othergender [u]
+race [u]
+god [u]
+homezip_foreign [u]
+homestate_foreign[u]
+currenttown [u]
+sametown [u]
+employment [r]
+quirk [r]
+
+See also comments for specific keys.
+
 '
 
 matchparams <- dict(list(
@@ -43,11 +75,22 @@ matchparams <- dict(list(
     # Demography
     demography = dict(list(
         hl = list(label="Allgemein", icon="fa-user"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                demography1 = "eyes",
+                demography2 = "righthanded",
+                demography3 = "homestate_ger",
+                demography4 = "language",
+                demography5 = "otherlanguage",
+                demography6 = "totlanguage"
+                ),
+            max = 3
+            ),
         items = dict(list(
             age = dict(list(
                 weight = function(value=NA, common=NA) {
-                    # slightly diff. bc of unused gender info (15 if geder matched too)
+                    # slightly diff. bc of unused gender info (15 if gender matched too)
                     return(12)
                     }
                 )),
@@ -76,8 +119,8 @@ matchparams <- dict(list(
                 )),
             righthanded = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Rechtshänder") return(5)
-                    if (value == "Linkshänder") return(20)
+                    if (value == "RechtshÃ¤nder") return(5)
+                    if (value == "LinkshÃ¤nder") return(20)
                     return(30)
                     }
                 )),
@@ -111,7 +154,18 @@ matchparams <- dict(list(
     # Location
     location = dict(list(
         hl = list(label="Ort und Herkunft", icon="fa-house-chimney-window"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                location2 = "currentrural",
+                location3 = "grownup_ger",
+                location4 = "homerural",
+                location5 = "secondgen",
+                location6 = "secondgencountry",
+                location7 = "samestate"
+                ),
+            max = 3
+            ),
         items = dict(list(
             currentstate = dict(list(
                 weight = function(value=NA, common=NA) {
@@ -153,22 +207,10 @@ matchparams <- dict(list(
                     return(45)
                     }
                 )),
-            homestate_foreign = dict(list(
-                fuzzy = TRUE,
-                weight = function(value=NA, common=NA) {
-                    return(20)
-                    }
-                )),
             hometown_foreign = dict(list(
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
-                    }
-                )),
-            homezip_foreign = dict(list(
-                # exact sensible?
-                weight = function(value=NA, common=NA) {
-                    return(50)
                     }
                 )),
             homerural = dict(list(
@@ -191,7 +233,7 @@ matchparams <- dict(list(
             secondgen = dict(list(
                 weight = function(value=NA, common=NA) {
                     if (value == "Eltern") return(25)
-                    if (value == "Großeltern") return(15)
+                    if (value == "GroÃŸeltern") return(15)
                     }
                 )),
             secondgencountry = dict(list(
@@ -206,8 +248,23 @@ matchparams <- dict(list(
 
     # Family
     family = dict(list(
-        hl = list(label="Persönlicher Hintergrund", icon="fa-users"),
-        printsubset = list(subgroups=NA, max="4"),
+        hl = list(label="PersÃ¶nlicher Hintergrund", icon="fa-users"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                family1 = "marital",
+                family2 = "parentsdivorced",
+                family3 = "children",
+                family4 = "siblings",
+                family5 = c("pets", "otherpets"),
+                family6 = "education",
+                family7 = c("military", "militarybranch"),
+                family8 = "caregiver",
+                family9 = "lossfriend",
+                family10 = "gayfriends"
+                ),
+            max = 4
+            ),
         items = dict(list(
             marital = dict(list(
                 weight = function(value=NA, common=NA) {
@@ -255,8 +312,8 @@ matchparams <- dict(list(
                 )),
             military = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich habe beim Militär") return(25)
-                    if (value == "Ich habe nicht beim Militär gedient.") return(5)
+                    if (value == "Ich habe beim MilitÃ¤r") return(25)
+                    if (value == "Ich habe nicht beim MilitÃ¤r gedient.") return(5)
                     }
                 )),
             militarybranch = dict(list(
@@ -290,8 +347,8 @@ matchparams <- dict(list(
                 )),
             caregiver = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Pflegetätigkeit") return(50)
-                    if (value == "keine Pflegetätigkeit") return(2)
+                    if (value == "PflegetÃ¤tigkeit") return(50)
+                    if (value == "keine PflegetÃ¤tigkeit") return(2)
                     }
                 )),
             pets = dict(list(
@@ -313,14 +370,21 @@ matchparams <- dict(list(
     # Finance
     finance = dict(list(
         hl = list(label="Finanzen", icon="fa-money-check-dollar"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                finance1 = "incomeclass",
+                finance2 = "incomeclasschild",
+                finance3 = "incomeclassfuture",
+                finance4 = "incomeclassPastDirection",
+                finance5 = "incomeclassFutureDirection",
+                finance6 = "owncar",
+                finance7 = "ownhouse",
+                finance8 = "studentdebt"
+                ),
+            max = 3
+            ),
         items = dict(list(
-            employment = dict(list(
-                # combine ?
-                weight = function(value=NA, common=NA) {
-                    return(10)
-                    }
-                )),
             ownhouse = dict(list(
                 weight = function(value=NA, common=NA) {
                     return(15)
@@ -333,8 +397,8 @@ matchparams <- dict(list(
                 )),
             studentdebt = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ja, und sie sind groß") return(30)
-                    if (value == "Ja, aber sie sind überschaubar") return(20)
+                    if (value == "Ja, und sie sind groÃŸ") return(30)
+                    if (value == "Ja, aber sie sind Ã¼berschaubar") return(20)
                     if (value == "Nein, ich habe sie abbezahlt") return(15)
                     if (value == "Nein, ich hatte nie welche") return(8)
                     }
@@ -358,13 +422,13 @@ matchparams <- dict(list(
                 )),
             incomeclassPastDirection = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value != "keine Veränderung") return(15)
+                    if (value != "keine VerÃ¤nderung") return(15)
                     return(5)
                     }
                 )),
             incomeclassFutureDirection = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value != "keine Veränderung") return(15)
+                    if (value != "keine VerÃ¤nderung") return(15)
                     return(5)
                     }
                 )),
@@ -401,8 +465,23 @@ matchparams <- dict(list(
 
     # Personality
     personality = dict(list(
-        hl = list(label="Persönlichkeit", icon="fa-face-smile"),
-        printsubset = list(subgroups=NA, max="3"),
+        hl = list(label="PersÃ¶nlichkeit", icon="fa-face-smile"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                personality1 = "patient",
+                personality2 = "confrontational",
+                personality3 = "messy",
+                personality4 = "energetic",
+                personality5 = "competitive",
+                personality6 = "perfectionist",
+                personality7 = "workorplay",
+                personality8 = "carebody",
+                personality9 = "fascination",
+                personality10 = "fairies"
+                ),
+            max = 3
+            ),
         items = dict(list(
             workorplay = dict(list(
                 weight = function(value=NA, common=NA) {
@@ -421,8 +500,8 @@ matchparams <- dict(list(
                 )),
             perfectionist = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ansonsten würde ich mich selbst als ziemlichen Perfektionist beschreiben.") return(30)
-                    if (value == "Ansonsten würde ich mich selbst nicht als Perfektionist beschreiben.") return(15)
+                    if (value == "Ansonsten wÃ¼rde ich mich selbst als ziemlichen Perfektionist beschreiben.") return(30)
+                    if (value == "Ansonsten wÃ¼rde ich mich selbst nicht als Perfektionist beschreiben.") return(15)
                     }
                 )),
             patient = dict(list(
@@ -434,7 +513,7 @@ matchparams <- dict(list(
                 weight = function(value=NA, common=NA) {
                     if (value == "sehr chaotisch") return(30)
                     if (value == "eher chaotisch") return(15)
-                    if (value == "überhaupt nicht chaotisch") return(15)
+                    if (value == "Ã¼berhaupt nicht chaotisch") return(15)
                     }
                 )),
             carebody = dict(list(
@@ -454,8 +533,8 @@ matchparams <- dict(list(
                 )),
             fairies = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Auch wenn ich weiß, dass es viele Menschen komisch finden, wünsche ich mir manchmal, dass fantastische Kreaturen real wären.") return(30)
-                    if (value == "Mit fantastischen Kreaturen und solchen Dingen kann ich überhaupt nichts anfangen.") return(5)
+                    if (value == "Auch wenn ich weiÃŸ, dass es viele Menschen komisch finden, wÃ¼nsche ich mir manchmal, dass fantastische Kreaturen real wÃ¤ren.") return(30)
+                    if (value == "Mit fantastischen Kreaturen und solchen Dingen kann ich Ã¼berhaupt nichts anfangen.") return(5)
                     }
                 ))
             ))
@@ -464,7 +543,20 @@ matchparams <- dict(list(
     # Behavior
     behavior = dict(list(
         hl = list(label="Verhalten", icon="fa-hands"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                behavior1 = "foodback",
+                behavior2 = "giveaway",
+                behavior3 = "streetfurniture",
+                behavior4 = "giftrecycle",
+                behavior5 = "snooze",
+                behavior6 = "stoleglass",
+                behavior7 = "profanelanguage",
+                behavior8 = "readhoroscope"
+                ),
+            max = 3
+            ),
         items = dict(list(
             snooze = dict(list(
                 weight = function(value=NA, common=NA) {
@@ -473,8 +565,8 @@ matchparams <- dict(list(
                 )),
             streetfurniture = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich bin ein Mensch, der auch mal Möbel vom Sperrmüll mit nach Hause mit.") return(30)
-                    if (value == "Ich bin kein Mensch, der Möbel vom Sperrmüll mit nach Hause nehmen würde.") return(10)
+                    if (value == "Ich bin ein Mensch, der auch mal MÃ¶bel vom SperrmÃ¼ll mit nach Hause mit.") return(30)
+                    if (value == "Ich bin kein Mensch, der MÃ¶bel vom SperrmÃ¼ll mit nach Hause nehmen wÃ¼rde.") return(10)
                     }
                 )),
             giveaway = dict(list(
@@ -485,7 +577,7 @@ matchparams <- dict(list(
             stoleglass = dict(list(
                 weight = function(value=NA, common=NA) {
                     if (value == "Ich finde, dass man es mit den Regeln nicht unbedingt immer ganz genau nehmen muss. Ich habe ehrlich gesagt auch schon mal ein Glas aus einer Bar gestohlen.") return(40)
-                    if (value == "Ich finde, dass auch kleinere Diebstähle kein Kavaliersdelikt sind. Ich habe zum Beispiel noch nie ein Glas aus einer Bar gestohlen.") return(10)
+                    if (value == "Ich finde, dass auch kleinere DiebstÃ¤hle kein Kavaliersdelikt sind. Ich habe zum Beispiel noch nie ein Glas aus einer Bar gestohlen.") return(10)
                     }
                 )),
             foodback = dict(list(
@@ -495,8 +587,8 @@ matchparams <- dict(list(
                 )),
             giftrecycle = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Wenn mir ein Geschenk selbst nicht gefällt, schenke ich es manchmal auch einfach weiter.") return(30)
-                    if (value == "Auch wenn mir ein Geschenk selbst nicht gefällt, würde ich es niemals einfach weiter verschenken.") return(20)
+                    if (value == "Wenn mir ein Geschenk selbst nicht gefÃ¤llt, schenke ich es manchmal auch einfach weiter.") return(30)
+                    if (value == "Auch wenn mir ein Geschenk selbst nicht gefÃ¤llt, wÃ¼rde ich es niemals einfach weiter verschenken.") return(20)
                     }
                 )),
             profanelanguage = dict(list(
@@ -504,7 +596,7 @@ matchparams <- dict(list(
                     if (value == "ich nie") return(25)
                     if (value == "auch ich gelegentlich") return(20)
                     if (value == "auch ich durchaus oft") return(20)
-                    if (value == "auch ich regelmäßig") return(30)
+                    if (value == "auch ich regelmÃ¤ÃŸig") return(30)
                     }
                 )),
             readhoroscope = dict(list(
@@ -521,7 +613,18 @@ matchparams <- dict(list(
     # Taste
     taste = dict(list(
         hl = list(label="Geschmack", icon="fa-star"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                taste0 = c("color", "othercolor"),
+                taste1 = c("food", "otherfood"),
+                taste2 = "spicyfood",
+                taste3 = "vegetarian",
+                taste4 = "countriesvisited",
+                taste5 = "vacation"
+                ),
+            max = 3
+            ),
         items = dict(list(
             color = dict(list(
                 weight = function(value=NA, common=NA) {
@@ -547,25 +650,25 @@ matchparams <- dict(list(
                 )),
             spicyfood = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich mag scharfes Essen grundsätzlich nicht.") return(12)
-                    if (value == "Ich mag mein Essen gerne würzig, aber nicht zu viel.") return(10)
+                    if (value == "Ich mag scharfes Essen grundsÃ¤tzlich nicht.") return(12)
+                    if (value == "Ich mag mein Essen gerne wÃ¼rzig, aber nicht zu viel.") return(10)
                     if (value == "Ich mag scharfes Essen.") return(15)
                     if (value == "Mir kann das Essen gar nicht scharf genug sein.") return(22)
                     }
                 )),
             vegetarian = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich esse grundsätzlich kein Fleisch.") return(25)
+                    if (value == "Ich esse grundsÃ¤tzlich kein Fleisch.") return(25)
                     if (value == "Ich esse ganz gerne auch mal Gerichte mit Fleisch.") return(8)
                     }
                 )),
             countriesvisited = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Bislang war ich noch nie außerhalb Deutschlands.") return(15)
-                    if (value == "Ich habe bislang ein bis zwei andere Länder bereist.") return(10)
-                    if (value == "Ich habe bislang drei bis fünf andere Länder bereist.") return(15)
-                    if (value == "Ich habe bislang sechs bis zehn andere Länder bereist.") return(20)
-                    if (value == "Ich habe bislang schon mehr als zehn andere Länder bereist.") return(28)
+                    if (value == "Bislang war ich noch nie auÃŸerhalb Deutschlands.") return(15)
+                    if (value == "Ich habe bislang ein bis zwei andere LÃ¤nder bereist.") return(10)
+                    if (value == "Ich habe bislang drei bis fÃ¼nf andere LÃ¤nder bereist.") return(15)
+                    if (value == "Ich habe bislang sechs bis zehn andere LÃ¤nder bereist.") return(20)
+                    if (value == "Ich habe bislang schon mehr als zehn andere LÃ¤nder bereist.") return(28)
                     }
                 ))
             ))
@@ -574,7 +677,18 @@ matchparams <- dict(list(
     # Things you do
     thingsyoudo = dict(list(
         hl = list(label="Dinge, die ich mache", icon="fa-person-running"),
-        printsubset = list(subgroups=NA, max="3"),
+        printsubset = list(
+            subgroups = NA,
+            map = list(
+                thingsyoudo0 = "socialmedia",
+                thingsyoudo1 = "fashion",
+                thingsyoudo2 = "smoke",
+                thingsyoudo3 = c("sportdo", "othersportdo"),
+                thingsyoudo4 = "museums",
+                thingsyoudo5 = "dance"
+                ),
+            max = 3
+            ),
         items = dict(list(
             vacation = dict(list(
                 split = ", ",
@@ -603,7 +717,7 @@ matchparams <- dict(list(
                     if (value == "Ich bin Raucher.") return(20)
                     if (value == "Ich bin Raucher, aber nur in Gesellschaft.") return(20)
                     if (value == "Ich bin Nichtraucher.") return(20)
-                    if (value == "Ich bin Nichtraucher, habe aber früher mal geraucht.") return(25)
+                    if (value == "Ich bin Nichtraucher, habe aber frÃ¼her mal geraucht.") return(25)
                     }
                 )),
             sportdo = dict(list(
@@ -641,21 +755,40 @@ matchparams <- dict(list(
         hl = list(label="Dinge, die ich mag", icon="fa-heart-pulse"),
         printsubset = list(
             subgroups = list(
-            c("thingsilike1", "thingsilike2"),
-            c("thingsilike3", "thingsilike4", "thingsilike5"),
-            c("thingsilike6", "thingsilike7"),
-            c("thingsilike8", "thingsilike9"),
-            c("thingsilike10", "thingsilike11"),
-            c("thingsilike12", "thingsilike13"),
-            c("thingsilike14", "thingsilike15"),
-            c("thingsilike16", "thingsilike17")
-            ), 
-            max = "4"
+                music = c("thingsilike1", "thingsilike2"),
+                movies = c("thingsilike3", "thingsilike4", "thingsilike5"),
+                sport = c("thingsilike6", "thingsilike7"),
+                tv = c("thingsilike8", "thingsilike9"),
+                books = c("thingsilike10", "thingsilike11"),
+                webchannels = c("thingsilike12", "thingsilike13"),
+                videogames = c("thingsilike14", "thingsilike15"),
+                creative = c("thingsilike16", "thingsilike17")
+                ),
+            map = list(
+                thingsilike1 = c("musiclisten", "music", "othermusic"),
+                thingsilike2 = "bestmusician",
+                thingsilike3 = c("moviefan", "movie", "othermovie"),
+                thingsilike4 = "bestmovie",
+                thingsilike5 = "bestactor",
+                thingsilike6 = c("sportfan", "sportfollow", "othersportfollow"),
+                thingsilike7 = "bestteam",
+                thingsilike8 = "watchtv",
+                thingsilike9 = "tvshows",
+                thingsilike10 = "readbooks",
+                thingsilike11 = "books",
+                thingsilike12 = "followwebchannels",
+                thingsilike13 = "webchannels",
+                thingsilike14 = "playvideogames",
+                thingsilike15 = "videogames",
+                thingsilike16 = "docreative",
+                thingsilike17 = "creative"
+                ),
+            max = 4
             ),
         items = dict(list(
             musiclisten = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich habe es gerne ruhig. Musik hören mag ich gar nicht so gern.") return(15)
+                    if (value == "Ich habe es gerne ruhig. Musik hÃ¶ren mag ich gar nicht so gern.") return(15)
                     return(5)
                     }
                 )),
@@ -716,7 +849,7 @@ matchparams <- dict(list(
                 split = ", ",
                 fuzzy = 0,
                 weight = function(value=NA, common=NA) {
-                    if (value == "Als Fan bin ich für Sport nicht zu begeistern.") return(15)
+                    if (value == "Als Fan bin ich fÃ¼r Sport nicht zu begeistern.") return(15)
                     return(5)
                     }
                 )),
@@ -757,7 +890,7 @@ matchparams <- dict(list(
                 )),
             readbooks = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich genieße es auch sehr mich in ein gutes Buch zu vertiefen.") return(15)
+                    if (value == "Ich genieÃŸe es auch sehr mich in ein gutes Buch zu vertiefen.") return(15)
                     return(10)
                     }
                 )),
@@ -783,7 +916,7 @@ matchparams <- dict(list(
                 )),
             followwebchannels = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Neue Medien nutze ich auch sehr gerne und folge selbst auch einigen Webkanälen.") return(15)
+                    if (value == "Neue Medien nutze ich auch sehr gerne und folge selbst auch einigen WebkanÃ¤len.") return(15)
                     return(5)
                     }
                 )),
@@ -796,7 +929,7 @@ matchparams <- dict(list(
                 )),
             docreative = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Ich liebe es mich kreativ zu betätigen.") return(20)
+                    if (value == "Ich liebe es mich kreativ zu betÃ¤tigen.") return(20)
                     return(8)
                     }
                 )),
@@ -809,33 +942,18 @@ matchparams <- dict(list(
                 ))
             ))
         ))
-    # Quirk
-    # quirk = dict(list(
-    #     hl = list(label="Ein interessanter Fakt über mich", icon="fa-face-surprise"),
-    #     items = dict(list(
-    #         otherfun = dict(list(
-    #             # what can be a match here?
-    #             split = ", ",
-    #             fuzzy = TRUE,
-    #             fuzzymaxdist = 20,
-    #             weight = function(value=NA, common=NA) {
-    #                 return(length(common) * 35)
-    #                 }
-    #             ))
-    #         ))
-    #     ))
     ))
 
-# variables to match on (in case you need the list ;-))
+# variables to match on
 # matchvars <- c(
 #     "age", "initials", "gender", "eyes", "othereyes", "righthanded", "language",
 #     "otherlanguage", "totlanguage", "currentstate", "currentzip", "currentrural",
-#     "grownup_ger", "homestate_ger", "hometown_ger", "homezip_ger", "homestate_foreign",
-#     "hometown_foreign", "homezip_foreign", "homerural", "samestate", "samezip",
+#     "grownup_ger", "homestate_ger", "hometown_ger", "homezip_ger",
+#     "hometown_foreign", "homerural", "samestate", "samezip",
 #     "secondgen", "secondgencountry", "marital", "parentsdivorced", "children",
 #     "childrenbracket", "siblings", "siblingsbracket", "military", "militarybranch",
 #     "education", "college", "gayfriends", "lossfriend", "caregiver", "pets",
-#     "otherpets", "employment", "ownhouse", "owncar", "studentdebt", "income",
+#     "otherpets", "ownhouse", "owncar", "studentdebt", "income",
 #     "incomebracket", "incomeclassPastDirection", "incomeclassFutureDirection",
 #     "incomeclasschild", "incomeclass", "incomeclassfuture", "workorplay", "energetic",
 #     "competitive", "perfectionist", "patient", "messy", "carebody", "confrontational",

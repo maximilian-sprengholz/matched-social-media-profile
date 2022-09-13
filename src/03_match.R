@@ -21,6 +21,10 @@ Changes 2022-07-08:
 Changes 2022-08-18:
 - Return dummy for each variable with a match (match_[varname]=0/1)
 
+Changes 2022-09-07:
+- Return score for each match, so that we can select variables with the 
+  highest/lowest weights for the profile
+
 '
 
 ### PARAMETERS ###
@@ -48,8 +52,19 @@ matcher <- function(
       function(x) { matchvars <- c(matchvars, matchparams$get(x)$get("items")$keys()) }
       ))
     df_matchsubset <- df[, c(idcol, opinionvar, matchvars)]
+
+    # keep track in terminal
+    message("\nMatcher started.")
+    ptot <- nrow(df_matchsubset)
+    pcnt <- 0
+
     df_match_all <- df_matchsubset %>%
         pmap_dfr(function(...) {
+
+            # keep track in terminal
+            pcnt <<- pcnt + 1
+            message(paste0("Matching ", pcnt, "/", ptot, "."), "\r", appendLF=FALSE)
+            flush.console()
 
             # data of person 1 for whom we search matches
             row_p1 <- tibble(...)
@@ -112,11 +127,11 @@ matcher <- function(
                                         matchvarparams$get("fuzzy", FALSE),
                                         matchvarparams$get("fuzzymaxdist", 4)
                                         )
-                                    match <- ifelse(score>0 && !is.na(score), 1, 0)
+                                    matched <- ifelse(score>0 && !is.na(score), 1, 0)
                                     result <- data.frame (
                                         matchvar = matchvar,
                                         score = score,
-                                        match = match
+                                        matched = matched
                                         )
                                     }
                                 }
@@ -131,15 +146,13 @@ matcher <- function(
                             } else {
                                 nmatches_simhigh <<- nmatches_simhigh + 1
                                 }
-                            # return match dummies (extract from match_results col)
-                            row_matched <- match_results[,c('matchvar','match')] %>%
+                            # return match dummies and scores (extract from match_results col)
+                            row_matched <- match_results[,c('matchvar', 'score', 'matched')] %>%
                                 pivot_wider(
                                     names_from = matchvar,
-                                    values_from = match
+                                    values_from = c(matched, score),
+                                    names_glue = "{matchvar}_{.value}"
                                     )
-                            colnames(row_matched) <- paste(
-                                colnames(row_matched), "matched", sep="_"
-                                )
                             # add person id (for merge), match id, match simscore
                             # simscore low/high cutoffs
                             # value on opinion essay of matched person
@@ -160,6 +173,9 @@ matcher <- function(
                 })
             }
         )
+        # message success, return all matches
+        message("\nDone.")
+        return(df_match_all) 
     }
 
 match_values <- function(
@@ -177,7 +193,7 @@ match_values <- function(
 
     - p1, p2: values of persons 1 and 2 for the compared variable
     - matchvar: name of variable compared
-    - split: indicates if variable value is actually a vector of values (boolean)
+    - split: indicates if var value is actually a vector of values by specifiying delimiter
     - fuzzy: indicates if fuzzy matching is required (boolean)
     '
 
@@ -201,7 +217,7 @@ match_values <- function(
             matchpos <- amatch(p1, p2, maxDist=fuzzymaxdist, matchNA=FALSE)
             common <- p2[matchpos]
         } else {
-            common <- intersect(p1,p2)
+            common <- intersect(p1, p2)
             }
 
         # score each match
