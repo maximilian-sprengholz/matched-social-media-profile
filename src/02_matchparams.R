@@ -196,7 +196,7 @@ matchparams <- dict(list(
                 )),
             hometown_ger = dict(list(
                 fuzzy = TRUE,
-                fuzzy_distperchar = 2,
+                fuzzy_distperchar = 0.25,
                 weight = function(value=NA, common=NA) {
                     return(25)
                     }
@@ -209,6 +209,7 @@ matchparams <- dict(list(
                 )),
             hometown_foreign = dict(list(
                 fuzzy = TRUE,
+                fuzzy_distperchar = 0.25,
                 weight = function(value=NA, common=NA) {
                     return(30)
                     }
@@ -330,6 +331,7 @@ matchparams <- dict(list(
                 )),
             college = dict(list(
                 fuzzy = TRUE,
+                fuzzy_distperchar = 0.2,
                 weight = function(value=NA, common=NA) {
                     return(35)
                     }
@@ -871,6 +873,7 @@ matchparams <- dict(list(
             bestteam = dict(list(
                 split = ",",
                 fuzzy = TRUE,
+                fuzzy_distperchar = 0.4,
                 weight = function(value=NA, common=NA) {
                     return(40)
                     }

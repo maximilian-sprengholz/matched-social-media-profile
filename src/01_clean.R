@@ -39,7 +39,7 @@ clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
   dfcol <- gsub("^,\\s|^,|,\\s$|,$|\\s,", "", dfcol)
 
   }
-
+  
 
 ### DEMOGRAPHICS ###
 
@@ -51,11 +51,9 @@ clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
 
 # eyes / othereyes
 '
-- Open questions can be cleaned fairly well automatically
-- Note for matching:
-  - It seems that in the Balietti paper, there was no option to choose different
-    (combinations of) colors outside of the open answer
-  - Fuzzy matching: Does order matter?
+- It seems that in the Balietti paper, there was no option to choose different
+  (combinations of) colors outside of the open answer
+- Fuzzy matching: Does order matter?
 '
 df <- rename(df, othereyes_orig = othereyes)
 df$othereyes <- unlist(lapply(df$othereyes_orig, function(str) {
@@ -115,10 +113,18 @@ df$totlanguage <- unlist(lapply(df$otherlanguage, function(str) {
 # homestate_ger
 
 # hometown_ger
+df <- rename(df, hometown_ger_orig = hometown_ger)
+# general cleaning
+replace_pattern <- "K[.\\s]+A[.]|K[.]A[.]|Keine.*|\\b[0-9]+\\b"
+to_comma_pattern <- "----"
+df$hometown_ger <- clean_open_answers(df$hometown_ger_orig, replace_pattern, to_comma_pattern)
 
 # homezip_ger
 
 # hometown_foreign
+'
+ No further cleaning necessary for fuzzy matching.
+'
 
 # homerural (combines homerural_ger and homerural_foreign)
 
@@ -129,11 +135,6 @@ df$totlanguage <- unlist(lapply(df$otherlanguage, function(str) {
 # secondgen
 
 # secondgencountry
-'
-- Note for matching: Implement fuzzy logic (would it work, e.g., for German vs.
-  English names of the same origin?)
-- Some more cleaning necessary! Avoid fuzzy matches on gibberish.
-'
 df$secondgencountry_orig <- df$secondgencountry
 # general cleaning
 replace_pattern <- c(
@@ -173,8 +174,16 @@ df$secondgencountry <- gsub("([a-züäößA-ZÜÄÖ])(\\s)([a-züäößA-ZÜÄÖ
 # militarybranch
 
 # education
+df <- rename(df, education_orig = education)
+# remove print context
+df$education <- gsub("^Mein höchster beruflicher Schulabschluss ist ", "", df$education_orig)
+df$education <- gsub("^ei[ne]+ |[.]$", "", df$education)
 
 # college
+df <- rename(df, college_orig = college)
+# remove print context
+df$college <- gsub("^Studiert habe ich hier: |[.]$", "", df$college_orig)
+df$college
 
 # gayfriends
 
@@ -185,6 +194,11 @@ df$secondgencountry <- gsub("([a-züäößA-ZÜÄÖ])(\\s)([a-züäößA-ZÜÄÖ
 # pets
 
 # otherpets
+df <- rename(df, otherpets_orig = otherpets)
+# general cleaning
+replace_pattern <- "----"
+to_comma_pattern <- "[.]"
+df$otherpets <- clean_open_answers(df$otherpets_orig, replace_pattern, to_comma_pattern)
 
 # ownhouse
 
@@ -426,6 +440,21 @@ df$bestactor <- clean_open_answers(df$bestactor, replace_pattern, to_comma_patte
 '
  Evaluated as vector, but single match is scored. Empty in dataset.
 '
+
+# bestteam
+'
+ Evaluated as vector, but single match is scored. 
+'
+df <- rename(df, bestteam_orig = bestteam)
+# delete everything in parentheses and after dashes
+df$bestteam <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$bestteam_orig, ignore.case = TRUE) 
+# general cleaning
+replace_pattern <- c(
+  "da gibt es mehrere wie", "Es gibt keine Mannschaften beim Reiten"
+  )
+replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse="|")
+to_comma_pattern <- "/|\\s-\\s|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
+df$bestteam <- clean_open_answers(df$bestteam, replace_pattern, to_comma_pattern)
 
 # watchtv
 

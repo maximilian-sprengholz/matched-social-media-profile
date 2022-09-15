@@ -219,19 +219,22 @@ match_values <- function(
             Element by element comparison for maximum flexibility in terms of
             cleaning, checking, and fuzzy matching parameters.
             '
-            # trim spaces one last time
+            # trim spaces and make lower case (which would inflate needed distance)
             p1 <- str_trim(p1, "both")
-            p2 <- str_trim(p1, "both")
+            p2 <- str_trim(p2, "both")
+            p1 <- str_to_lower(p1)
+            p2 <- str_to_lower(p2)
             # match
             common <- unlist(mapply(
                 function(x, y) {
                     # compute maximum distance based on passed string length
-                    # and factor fuzzy_distperchar
+                    # and factor fuzzy_distperchar; minimum is 1
                     dist <- ifelse(
                         length(x) > length(y),
                         fuzzy_distperchar * nchar(x),
                         fuzzy_distperchar * nchar(y)
                         )
+                    if (dist < 1) dist <- 1 
                     matchpos <- amatch(x, y, maxDist=dist)
                     match <- y[matchpos]
                     y <<- y[-matchpos]
