@@ -113,7 +113,7 @@ matcher <- function(
 
                                     # match and score
                                     '
-                                     Note: Change default of fuzzymaxdist here!
+                                     Note: Change default of fuzzy_distperchar here!
 
                                      We return a dataframe with 3 columns:
                                      Matchvar, score and a dummy indicating
@@ -125,7 +125,7 @@ matcher <- function(
                                         valuesNA,
                                         matchvarparams$get("split", FALSE),
                                         matchvarparams$get("fuzzy", FALSE),
-                                        matchvarparams$get("fuzzymaxdist", 4)
+                                        matchvarparams$get("fuzzy_distperchar", 0.33)
                                         )
                                     matched <- ifelse(score>0 && !is.na(score), 1, 0)
                                     result <- data.frame (
@@ -186,7 +186,7 @@ match_values <- function(
         valuesNA=valuesNA,
         split,
         fuzzy,
-        fuzzymaxdist
+        fuzzy_distperchar
         ) {
     '
     Matches two persons on each variable passed.
@@ -195,6 +195,8 @@ match_values <- function(
     - matchvar: name of variable compared
     - split: indicates if var value is actually a vector of values by specifiying delimiter
     - fuzzy: indicates if fuzzy matching is required (boolean)
+    - fuzzy_distperchar: fuzzy distance allowed for each char in the longest of strings compared 
+      (default passed is 0.33)
     '
 
     # vectorize
@@ -213,9 +215,33 @@ match_values <- function(
 
         # match
         if (fuzzy==TRUE) {
-            # fuzzy matching requires string input!
-            matchpos <- amatch(p1, p2, maxDist=fuzzymaxdist, matchNA=FALSE)
-            common <- p2[matchpos]
+            '
+            Element by element comparison for maximum flexibility in terms of
+            cleaning, checking, and fuzzy matching parameters.
+            '
+            # trim spaces one last time
+            p1 <- str_trim(p1, "both")
+            p2 <- str_trim(p1, "both")
+            # match
+            common <- unlist(mapply(
+                function(x, y) {
+                    # compute maximum distance based on passed string length
+                    # and factor fuzzy_distperchar
+                    dist <- ifelse(
+                        length(x) > length(y),
+                        fuzzy_distperchar * nchar(x),
+                        fuzzy_distperchar * nchar(y)
+                        )
+                    matchpos <- amatch(x, y, maxDist=dist)
+                    match <- y[matchpos]
+                    y <<- y[-matchpos]
+                    return(match)
+                    },
+                p1,
+                p2
+                ))
+            # drop NA from common vector
+            common <- common[!is.na(common)]
         } else {
             common <- intersect(p1, p2)
             }

@@ -155,7 +155,7 @@ select_subset <- function(group, matchparams, item_set, df_row) {
     if (length(printsubset$subgroups) > 1) {
         # select groups as rows
         df_item_set <- data.frame(item = names(printsubset$subgroups))
-        # sum over groups x match vars per print item
+        # sum over groups x match var scores per print item
         df_item_set$simscore <- sapply(df_item_set$item, function(item) {
             item_scores <- intersect(
                 paste0(unlist(printsubset$map[unlist(printsubset$subgroups[item])]), "_score"),
@@ -222,8 +222,8 @@ select_subset <- function(group, matchparams, item_set, df_row) {
 
 ### RUN ########################################################################
 '
-You need to provide a export_indicator=dummy indicating if a profile should be
-exported for the match or not. Dummy created in 03_match.R (match_profile_export).
+You need to provide an export_indicator=dummy indicating if a profile should be
+exported for the match or not (in this case: match_profile_export).
 '
 
 # import matched data

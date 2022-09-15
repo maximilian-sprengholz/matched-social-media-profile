@@ -4,46 +4,46 @@ The dictionary contains all info necessary to:
 (1) Group items and print group headlines
 ------------------------------------------
 
-hl (list): list the label and icon (fa ref) displayed
-           (id of group div = group key, e.g. demography)
-printsubset (list): defines subsetting the printed items according to our rules:
+- hl (list): list the label and icon (fa ref) displayed
+  (id of group div = group key, e.g. demography)
+- printsubset (list): defines subsetting the printed items according to our rules:
     - subgroups (atomic vector): set if selection should be based on group of 
       items instead of single items
     - map (list): maps correspondence between print strings and matching vars, 
       allows to prioritize by sum of simscores when matchvars have been combined 
       in print strings
     - max: max number of items (or groups when subgroups!=NA) printed
-items (dict): list of all the variables belonging to that group;
-              all items also a dict
+- items (dict): list of all the variables belonging to that group; all items also a dict
 
 
 (2) Determine the way to match and score
 ----------------------------------------
 
-split (str/logical): separator if strings are to be treated as vector
-fuzzy (logical): TRUE if variable requires fuzzy matching
-fuzzymaxdist (int): maxDist parameter passend on to amatch() in match_values()
-weight: value or function (similar to Baliettia weight.js)
+- split (str/logical): separator if strings are to be treated as vector
+- fuzzy (logical): TRUE if variable requires fuzzy matching
+- fuzzy_distperchar (float, default = 0.33): 
+  - this is a factor to compute the maxDist parameter used by fuzzy amatch() in match_values() 
+  - consider two strings to compare, one longer than the other, then:
+    maxDist = floor(length(str_longer)*0.33)
+  - maxDist = 3 would mean that 3 x char deletion, insertion, substitution and transposition, 
+    are allowed for each comparison
+- weight: value or function (similar to Balietti weight.js)
 
 Dict evaluation is smart: If key is not set, a default is assumed. FALSE for
-split and fuzzy, 4 for fuzzymaxdist (please play around); see matcher().
+split and fuzzy, 0.33 for fuzzy_distperchar; see matcher().
 
 Comments:
 - Open answers under "Andere, und zwar:" can be vectors, but in the Baliettia
   paper the match vector length does not matter typically (so there is just one
   score irrespective of the number of matches). Can be a problem when the open
   answers contain a lot of elements, because the total weight these generate
-  might be lower than the (max. 3 x weight) for the closed answer categories.
+  might be lower than the max. n x weight for the closed answer categories.
 - Please see comments at specific vars for deviations or questions
-- ENCODING ISSUES: I had some Umlaut issues when editing in Atom and running in
-  R Studio (e.g. "Würzig, aber nicht zu viel"). Some Umlauts could be matched,
-  though, so no idea what the issue is exactly. At the moment runs fine after
-  inputting everzthing in R Studio...
 
 The dict can be extended to contain any other parameters.
 
 
-MATCHVAR DIFFERENCES TO BIALETTI ET AL.:
+MATCHVAR DIFFERENCES TO BALIETTI ET AL.:
 ----------------------------------------
 
 [u] unavailable in dataset
@@ -125,7 +125,7 @@ matchparams <- dict(list(
                     }
                 )),
             language = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     # German only get 2, every other match 18
@@ -134,7 +134,7 @@ matchparams <- dict(list(
                     }
                 )),
             otherlanguage = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 15)
@@ -196,7 +196,7 @@ matchparams <- dict(list(
                 )),
             hometown_ger = dict(list(
                 fuzzy = TRUE,
-                fuzzymaxdist = 2,
+                fuzzy_distperchar = 2,
                 weight = function(value=NA, common=NA) {
                     return(25)
                     }
@@ -237,7 +237,7 @@ matchparams <- dict(list(
                     }
                 )),
             secondgencountry = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 30)
@@ -347,18 +347,18 @@ matchparams <- dict(list(
                 )),
             caregiver = dict(list(
                 weight = function(value=NA, common=NA) {
-                    if (value == "Pflegetätigkeit") return(50)
+                    if (value == "eine Pflegetätigkeit") return(50)
                     if (value == "keine Pflegetätigkeit") return(2)
                     }
                 )),
             pets = dict(list(
-                split = ", ",
+                split = ",",
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
                     }
                 )),
             otherpets = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 30)
@@ -691,7 +691,7 @@ matchparams <- dict(list(
             ),
         items = dict(list(
             vacation = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(25)
@@ -721,13 +721,13 @@ matchparams <- dict(list(
                     }
                 )),
             sportdo = dict(list(
-                split = ", ",
+                split = ",",
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
                     }
                 )),
             othersportdo = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
@@ -793,20 +793,20 @@ matchparams <- dict(list(
                     }
                 )),
             music = dict(list(
-                split = ", ",
+                split = ",",
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
                     }
                 )),
             othermusic = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(20)
                     }
                 )),
             bestmusician = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
@@ -819,34 +819,34 @@ matchparams <- dict(list(
                     }
                 )),
             movie = dict(list(
-                split = ", ",
+                split = ",",
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
                     }
                 )),
             othermovie = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(20)
                     }
                 )),
             bestmovie = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
                     }
                 )),
             bestactor = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
                     }
                 )),
             sportfan = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = 0,
                 weight = function(value=NA, common=NA) {
                     if (value == "Als Fan bin ich für Sport nicht zu begeistern.") return(15)
@@ -856,20 +856,20 @@ matchparams <- dict(list(
             sportfollow = dict(list(
                 # Implementation in Baliettia does not use the common vector length!
                 # Makes no sense compared to the other items, please consider
-                split = ", ",
+                split = ",",
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
                     }
                 )),
             othersportfollow = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(30)
                     }
                 )),
             bestteam = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(40)
@@ -882,7 +882,7 @@ matchparams <- dict(list(
                     }
                 )),
             tvshows = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 20)
@@ -895,7 +895,7 @@ matchparams <- dict(list(
                     }
                 )),
             books = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 25)
@@ -908,7 +908,7 @@ matchparams <- dict(list(
                     }
                 )),
             videogames = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 30)
@@ -921,7 +921,7 @@ matchparams <- dict(list(
                     }
                 )),
             webchannels = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 40)
@@ -934,7 +934,7 @@ matchparams <- dict(list(
                     }
                 )),
             creative = dict(list(
-                split = ", ",
+                split = ",",
                 fuzzy = TRUE,
                 weight = function(value=NA, common=NA) {
                     return(length(common) * 22)
