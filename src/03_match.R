@@ -224,28 +224,38 @@ match_values <- function(
             p2 <- str_trim(p2, "both")
             p1 <- str_to_lower(p1)
             p2 <- str_to_lower(p2)
-            # match
-            common <- unlist(mapply(
-                function(x, y) {
-                    # compute maximum distance based on passed string length
-                    # and factor fuzzy_distperchar; minimum is 1
-                    dist <- ifelse(
-                        length(x) > length(y),
-                        fuzzy_distperchar * nchar(x),
-                        fuzzy_distperchar * nchar(y)
-                        )
-                    if (dist < 1) dist <- 1 
-                    matchpos <- amatch(x, y, maxDist=dist)
-                    match <- y[matchpos]
-                    y <<- y[-matchpos]
-                    return(match)
-                    },
-                p1,
-                p2
-                ))
+            # fuzzy matching
+            common <- unlist(lapply(p1, function(str1) {
+                # workaround for lapply not accepting continue: 
+                # return NA if str1 is already matched
+                str1matched <- 0
+                unlist(lapply(p2, function(str2) {
+                    if (str1matched==0) {
+                        # compute maximum distance based on passed string length
+                        # and factor fuzzy_distperchar; minimum is 1
+                        dist <- ifelse(
+                            nchar(str1) > nchar(str2),
+                            fuzzy_distperchar * nchar(str1),
+                            fuzzy_distperchar * nchar(str2)
+                            )
+                        matchpos <- amatch(str1, str2, maxDist=dist)
+                        if (!is.na(matchpos)) {
+                            str1matched <<- 1
+                            match <- str2
+                            p2 <<- p2[! p2 %in% str2]
+                            return(str2)
+                        } else {
+                            return(NA)
+                        }
+                    } else {
+                        return(NA)
+                    }
+                    }))
+                }))
             # drop NA from common vector
             common <- common[!is.na(common)]
         } else {
+            # exact matches
             common <- intersect(p1, p2)
             }
 
@@ -256,7 +266,7 @@ match_values <- function(
             score <- 0
             }
     } else {
-        score <- 0
+        score <- NA
         }
     return(score)
     }
@@ -302,8 +312,10 @@ df_matches <- matcher(
     df=df,
     matchparams=matchparams,
     valuesNA=c("-99", "-66", ".", "", "NA", NA),
-    simlow=300,
-    simhigh=600
+    simlow=450,
+    simhigh=449,
+    maxmatches_simlow=259,
+    maxmatches_simhigh=259
     )
 
 # merge in long format (1 row per match per person).
@@ -312,49 +324,49 @@ df <- merge(df, df_matches, by="lfdn", all=TRUE)
 
 ### SELECT MATCH ###############################################################
 
-'
- Select a match for each person based on 4 match_group options
+# '
+#  Select a match for each person based on 4 match_group options
 
- 4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
-     - same opinion & same characteristics (=highest simscore)
-     - same opinion & diff. characteristics (=lowest simscore)
-     - diff. opinion & same characteristics (=highest simscore)
-     - diff. opinion & diff. characteristics (=lowest simscore)
+#  4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
+#      - same opinion & same characteristics (=highest simscore)
+#      - same opinion & diff. characteristics (=lowest simscore)
+#      - diff. opinion & same characteristics (=highest simscore)
+#      - diff. opinion & diff. characteristics (=lowest simscore)
 
- Selected match: match_profile_export = 1
-'
-# polsim (opinion essay)
-df <- df %>% mutate(match_polsim = ifelse(
-    essay_opinion_prior == match_essay_opinion_prior, 1, 0
-    ))
+#  Selected match: match_profile_export = 1
+# '
+# # polsim (opinion essay)
+# df <- df %>% mutate(match_polsim = ifelse(
+#     essay_opinion_prior == match_essay_opinion_prior, 1, 0
+#     ))
 
-# nonpolsim (simscore, check against user provided simscore bounds)
-df_match_best <- df %>% group_by_at("lfdn") %>%
-    slice(which.max(match_simscore)) %>%
-    mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
-df_match_worst <- df %>% group_by_at("lfdn") %>%
-    slice(which.min(match_simscore)) %>%
-    mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
-df <- merge(
-    df, rbind(df_match_best, df_match_worst), by=c("lfdn", "match_lfdn"),
-    all.x=TRUE, all.y=FALSE
-    )
+# # nonpolsim (simscore, check against user provided simscore bounds)
+# df_match_best <- df %>% group_by_at("lfdn") %>%
+#     slice(which.max(match_simscore)) %>%
+#     mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
+#     select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+# df_match_worst <- df %>% group_by_at("lfdn") %>%
+#     slice(which.min(match_simscore)) %>%
+#     mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
+#     select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+# df <- merge(
+#     df, rbind(df_match_best, df_match_worst), by=c("lfdn", "match_lfdn"),
+#     all.x=TRUE, all.y=FALSE
+#     )
 
-# match_group
-df$match_group <- NA
-df$match_group[df$match_polsim==1 & df$match_nonpolsim==1] <- "Same opinion, same characteristics"
-df$match_group[df$match_polsim==1 & df$match_nonpolsim==0] <- "Same opinion, different characteristics"
-df$match_group[df$match_polsim==0 & df$match_nonpolsim==1] <- "Different opinion, same characteristics"
-df$match_group[df$match_polsim==0 & df$match_nonpolsim==0] <- "Different opinion, different characteristics"
+# # match_group
+# df$match_group <- NA
+# df$match_group[df$match_polsim==1 & df$match_nonpolsim==1] <- "Same opinion, same characteristics"
+# df$match_group[df$match_polsim==1 & df$match_nonpolsim==0] <- "Same opinion, different characteristics"
+# df$match_group[df$match_polsim==0 & df$match_nonpolsim==1] <- "Different opinion, same characteristics"
+# df$match_group[df$match_polsim==0 & df$match_nonpolsim==0] <- "Different opinion, different characteristics"
 
-# match_profile_export = random selection of match_group
-set.seed(42)
-df_random_match <- df %>% group_by_at("lfdn") %>% filter(!is.na(match_group)) %>%
-    slice_sample(n = 1) %>% select(c(lfdn, match_lfdn)) %>%
-    mutate(match_profile_export = 1)
-df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
+# # match_profile_export = random selection of match_group
+# set.seed(42)
+# df_random_match <- df %>% group_by_at("lfdn") %>% filter(!is.na(match_group)) %>%
+#     slice_sample(n = 1) %>% select(c(lfdn, match_lfdn)) %>%
+#     mutate(match_profile_export = 1)
+# df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_match.feather"))

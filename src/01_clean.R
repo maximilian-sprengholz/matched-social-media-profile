@@ -11,17 +11,6 @@
 '
 
 ### FUNCTIONS ###
-'
-Cleaning functions to clean open answers:
-- General
-  - Split strings: 
-    - convert all interpunction to comma
-    - convert spaces to comma if likelihood is high that answer contains no 
-      spaces and/or one match is enough (e.g. country)
-    - matching: use maxdist threshold (e.g. 50% of shorter word char length)
-- Question specific:
-  -
-'
 
 clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
 
@@ -39,7 +28,7 @@ clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
   dfcol <- gsub("^,\\s|^,|,\\s$|,$|\\s,", "", dfcol)
 
   }
-  
+
 
 ### DEMOGRAPHICS ###
 

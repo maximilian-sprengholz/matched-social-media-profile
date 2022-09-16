@@ -325,6 +325,7 @@ matchparams <- dict(list(
             education = dict(list(
                 # open answers perhaps problematic
                 fuzzy = TRUE,
+                fuzzy_distperchar = 0.15,
                 weight = function(value=NA, common=NA) {
                     return(10)
                     }
