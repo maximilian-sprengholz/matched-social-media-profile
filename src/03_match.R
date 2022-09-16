@@ -245,7 +245,7 @@ match_values <- function(
                                 message(paste0("Caught error: ", e))
                                 message(paste0("Compared ", str1, " and ", str2, " with dist=", dist))
                                 matchpos <<- NA
-                                },
+                                }
                             )
                         if (!is.na(matchpos)) {
                             str1matched <<- 1
