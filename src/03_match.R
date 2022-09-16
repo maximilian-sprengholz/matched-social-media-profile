@@ -238,7 +238,15 @@ match_values <- function(
                             fuzzy_distperchar * nchar(str1),
                             fuzzy_distperchar * nchar(str2)
                             )
-                        matchpos <- amatch(str1, str2, maxDist=dist)
+                        # implement exception handling to know whats going on
+                        tryCatch(
+                            matchpos <- amatch(str1, str2, maxDist=dist),
+                            error = function(e) {
+                                message(paste0("Caught error: ", e))
+                                message(paste0("Compared ", str1, " and ", str2, " with dist=", dist))
+                                matchpos <<- NA
+                                },
+                            )
                         if (!is.na(matchpos)) {
                             str1matched <<- 1
                             match <- str2
@@ -314,8 +322,8 @@ df_matches <- matcher(
     valuesNA=c("-99", "-66", ".", "", "NA", NA),
     simlow=399,
     simhigh=699,
-    maxmatches_simlow=10,
-    maxmatches_simhigh=10
+    maxmatches_simlow=5,
+    maxmatches_simhigh=5
     )
 
 # merge in long format (1 row per match per person).

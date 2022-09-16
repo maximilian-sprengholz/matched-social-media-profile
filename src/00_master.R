@@ -28,7 +28,7 @@ setwd(wd)
 
 # sample data (use smaller subset to speed up matching)
 df <- read_csv(paste0(wd, "/data/testdata_2022-09-12.csv"))
-df <- df[1:20, ]
+#df <- df[1:20, ]
 
 # clean
 source("src/01_clean.R")
