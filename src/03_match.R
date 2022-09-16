@@ -312,61 +312,64 @@ df_matches <- matcher(
     df=df,
     matchparams=matchparams,
     valuesNA=c("-99", "-66", ".", "", "NA", NA),
-    simlow=450,
-    simhigh=449,
-    maxmatches_simlow=259,
-    maxmatches_simhigh=259
+    simlow=399,
+    simhigh=699,
+    maxmatches_simlow=10,
+    maxmatches_simhigh=10
     )
 
 # merge in long format (1 row per match per person).
 df <- merge(df, df_matches, by="lfdn", all=TRUE)
 
+# save (temp)
+write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
+
 
 ### SELECT MATCH ###############################################################
 
-# '
-#  Select a match for each person based on 4 match_group options
+'
+ Select a match for each person based on 4 match_group options
 
-#  4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
-#      - same opinion & same characteristics (=highest simscore)
-#      - same opinion & diff. characteristics (=lowest simscore)
-#      - diff. opinion & same characteristics (=highest simscore)
-#      - diff. opinion & diff. characteristics (=lowest simscore)
+ 4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
+     - same opinion & same characteristics (=highest simscore)
+     - same opinion & diff. characteristics (=lowest simscore)
+     - diff. opinion & same characteristics (=highest simscore)
+     - diff. opinion & diff. characteristics (=lowest simscore)
 
-#  Selected match: match_profile_export = 1
-# '
-# # polsim (opinion essay)
-# df <- df %>% mutate(match_polsim = ifelse(
-#     essay_opinion_prior == match_essay_opinion_prior, 1, 0
-#     ))
+ Selected match: match_profile_export = 1
+'
+# polsim (opinion essay)
+df <- df %>% mutate(match_polsim = ifelse(
+    essay_opinion_prior == match_essay_opinion_prior, 1, 0
+    ))
 
-# # nonpolsim (simscore, check against user provided simscore bounds)
-# df_match_best <- df %>% group_by_at("lfdn") %>%
-#     slice(which.max(match_simscore)) %>%
-#     mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
-#     select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
-# df_match_worst <- df %>% group_by_at("lfdn") %>%
-#     slice(which.min(match_simscore)) %>%
-#     mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
-#     select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
-# df <- merge(
-#     df, rbind(df_match_best, df_match_worst), by=c("lfdn", "match_lfdn"),
-#     all.x=TRUE, all.y=FALSE
-#     )
+# nonpolsim (simscore, check against user provided simscore bounds)
+df_match_best <- df %>% group_by_at("lfdn") %>%
+    slice(which.max(match_simscore)) %>%
+    mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
+    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+df_match_worst <- df %>% group_by_at("lfdn") %>%
+    slice(which.min(match_simscore)) %>%
+    mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
+    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+df <- merge(
+    df, rbind(df_match_best, df_match_worst), by=c("lfdn", "match_lfdn"),
+    all.x=TRUE, all.y=FALSE
+    )
 
-# # match_group
-# df$match_group <- NA
-# df$match_group[df$match_polsim==1 & df$match_nonpolsim==1] <- "Same opinion, same characteristics"
-# df$match_group[df$match_polsim==1 & df$match_nonpolsim==0] <- "Same opinion, different characteristics"
-# df$match_group[df$match_polsim==0 & df$match_nonpolsim==1] <- "Different opinion, same characteristics"
-# df$match_group[df$match_polsim==0 & df$match_nonpolsim==0] <- "Different opinion, different characteristics"
+# match_group
+df$match_group <- NA
+df$match_group[df$match_polsim==1 & df$match_nonpolsim==1] <- "Same opinion, same characteristics"
+df$match_group[df$match_polsim==1 & df$match_nonpolsim==0] <- "Same opinion, different characteristics"
+df$match_group[df$match_polsim==0 & df$match_nonpolsim==1] <- "Different opinion, same characteristics"
+df$match_group[df$match_polsim==0 & df$match_nonpolsim==0] <- "Different opinion, different characteristics"
 
-# # match_profile_export = random selection of match_group
-# set.seed(42)
-# df_random_match <- df %>% group_by_at("lfdn") %>% filter(!is.na(match_group)) %>%
-#     slice_sample(n = 1) %>% select(c(lfdn, match_lfdn)) %>%
-#     mutate(match_profile_export = 1)
-# df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
+# match_profile_export = random selection of match_group
+set.seed(42)
+df_random_match <- df %>% group_by_at("lfdn") %>% filter(!is.na(match_group)) %>%
+    slice_sample(n = 1) %>% select(c(lfdn, match_lfdn)) %>%
+    mutate(match_profile_export = 1)
+df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_match.feather"))

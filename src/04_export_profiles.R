@@ -44,8 +44,8 @@ exporter <- function(
             df_match_row <- df_match_row[1,]
             # file path
             path_file <- paste0(path_dir, df_row[1,idcol], ".html")
-            # export profile
-            export_values(
+            # export profile; save sum of simscores of printed items
+            profile_simscore <- export_values(
                 df_row,
                 df_match_row,
                 idcol,
@@ -53,12 +53,17 @@ exporter <- function(
                 matchparams,
                 valuesNA)
             # return url (only thing stored, to be merged to df)
-            return(data.frame(idcol = df_row[1,idcol], match_profile_url = path_file))
+            return(data.frame(
+                idcol = df_row[1, idcol],
+                match_profile_url = path_file,
+                match_profile_simscore = profile_simscore
+                ))
             })
     }
 
 export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, valuesNA) {
     '
+    - returns the sum of simscores of all printed items in each profile
     - References are mostly hard-coded (e.g. header1 for intials). Bear in mind
       when changing the references.
     '
@@ -94,14 +99,17 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
 
     # for keys { for keys not in header_set {PRINT}}
     content_main <- list() # gather group content in list, collapse later
+    profile_simscore <- 0
     for (group in unlist(matchparams$keys())) {
         # get all print strings (e.g. demography1, 2, ...); check if not empty
         item_set <- sort(colnames(df_match_row)[
             grepl(paste0(group, "[0-9]+"), colnames(df_match_row))
             ])
         if (length(item_set) > 0) {
-            # randomly select print subset
-            item_set <- select_subset(group, matchparams, item_set, df_row)
+            # randomly select print subset; sum up corresponding simscore (returned)
+            item_selection <- select_subset(group, matchparams, item_set, df_row)
+            item_set <- item_selection$items
+            profile_simscore <- profile_simscore + item_selection$simscore
             # container start
             content_main[group] <- paste0(
                 '<div id="',
@@ -138,6 +146,9 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
     content <- gsub("--HEADER--", content_header, template)
     content <- gsub("--MAIN--", content_main, content)
     stri_write_lines(content, path_file)
+
+    # return simscore sum of all printed items
+    return(profile_simscore)
 }
 
 select_subset <- function(group, matchparams, item_set, df_row) {
@@ -211,13 +222,19 @@ select_subset <- function(group, matchparams, item_set, df_row) {
         }
     if (nrow(df_item_set) >= printsubset$max) df_item_set <- df_item_set[1:printsubset$max,]
     
-    # return subselection of item_set to be printed (expand groups if necessary)
+    # simscore sum of printed items (might differ from total simscore)
+    simscore <- colSums(df_item_set["simscore"], na.rm=TRUE)
+ 
+    # subselection of item_set to be printed (expand groups if necessary)
     if (length(printsubset$subgroups) > 1) {
         item_set <- intersect(item_set, unlist(printsubset$subgroups[unlist(df_item_set["item"])]))
     } else {
         item_set <- intersect(item_set, unlist(df_item_set["item"]))
         }
-    return(item_set)
+
+    # return
+    item_selection <- list(items = item_set, simscore = simscore)
+    return(item_selection)
     }
 
 ### RUN ########################################################################
@@ -243,3 +260,6 @@ df <- merge(df, profiles, by="lfdn", all=TRUE)
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_export.feather"))
+
+
+df[c("lfdn", "match_lfdn", "match_simscore", "match_profile_simscore")]
