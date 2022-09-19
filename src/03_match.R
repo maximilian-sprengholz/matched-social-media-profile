@@ -242,8 +242,9 @@ match_values <- function(
                         tryCatch(
                             matchpos <- amatch(str1, str2, maxDist=dist),
                             error = function(e) {
+                                flush.console()
                                 message(paste0("Caught error: ", e))
-                                message(paste0("Compared ", str1, " and ", str2, " with dist=", dist))
+                                message(paste0("Compared ", matchvar, "with: ", str1, " and ", str2, " with dist=", dist))
                                 matchpos <<- NA
                                 }
                             )
