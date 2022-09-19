@@ -39,7 +39,7 @@ get_matchvars <- function(
     return(matchvars)
 }
 
-compare_by_id <- function(df, matchvars=c(), pid, matchid) {
+compare_by_id <- function(df, matchvars = c(), pid, matchid) {
     '
     This function takes a person id (lfdn) and a match id (match_lfdn) and extracts a single
     row per person from the dataframe, and presents them side-by-side as transposed columns.
@@ -68,17 +68,17 @@ compare_by_id <- function(df, matchvars=c(), pid, matchid) {
 
 check_matches <- function(
         df,
-        matchvars=c(), # vector of matching variables to be checked; defaults to all
+        matchvars,
         matchdummyvalues = c(0, 1, NA) # vector of match results to check (unmatched, matched, NA)
         ) {
 
-    # subset dataframe to contain just matching specific columns
-    if (length(matchvars) == 0) matchvars <- get_matchvars()
+    # subset dataframe to contain just matching specific columns; and what's in the df
     cols <- c(
         "lfdn", matchvars, "match_lfdn", paste0(matchvars, "_matched"), paste0(matchvars, "_score")
         )
     cols <- cols[cols %in% colnames(df)]
-    df <- df[, cols]
+    df <- df %>% select(cols)
+    matchvars <- gsub("_matched", "", names(df %>% select(contains("_matched"))))
 
     # randomly select a match pair (person, match); display; ask to continue
     if (interactive()) {
@@ -86,29 +86,37 @@ check_matches <- function(
             continue <- TRUE
             # runs forever if no manual user abort via terminal input
             while (continue == TRUE) {
-                # subset
-                df_matchvar <- df %>%
-                    select(ends_with("lfdn") | starts_with(matchvar)) %>%
+                # subset, check if non-empty
+                df_matchvar <- df %>% select(ends_with("lfdn") | starts_with(matchvar))
+                # randomly select p1 row, check if empty
+                row_p1 <- df_matchvar %>%
                     filter(.data[[paste0(matchvar, "_matched")]] %in% matchdummyvalues)
-                row_p1 <- df_matchvar %>% slice_sample(n = 1)
-                row_p2 <- df_matchvar %>%
-                    filter(lfdn %in% row_p1["match_lfdn"]) %>%
-                    slice_sample(n = 1)
-                # display
-                message(paste0("Matchvar:          ", matchvar))
-                message(paste0("Value P1 (", row_p1["lfdn"], "):  ", row_p1[matchvar]))
-                message(paste0("Value P2 (", row_p2["lfdn"], "):  ", row_p2[matchvar]))
-                message(paste0("Matched:           ", row_p1[paste0(matchvar, "_matched")]))
-                message(paste0("Score:             ", row_p1[paste0(matchvar, "_score")]))
-                # user confirmation
-                userinput <- readline(
-                    prompt = "Hit enter to continue. Write 'exit' and hit enter to exit. "
-                    )
-                if (grepl("^exit", userinput)) {
-                    # exit
-                    stop("User exited.")
-                } else if (grepl("^next", userinput)) {
-                    # jump to next
+                if (nrow(row_p1) > 0) {
+                    row_p1 <- row_p1 %>% slice_sample(n = 1)
+                    # select match row
+                    row_p2 <- df_matchvar %>%
+                        filter(lfdn %in% row_p1["match_lfdn"]) %>%
+                        slice_sample(n = 1)
+                    # display
+                    spaces_p1 <- replicate(5 - nchar(as.character(row_p1["lfdn"])), " ")
+                    spaces_p2 <- replicate(5 - nchar(as.character(row_p2["lfdn"])), " ")
+                    message(paste0("Matchvar:          ", matchvar))
+                    message(paste0("Value P1 (", row_p1["lfdn"], "):  ", spaces_p1, row_p1[matchvar]))
+                    message(paste0("Value P2 (", row_p2["lfdn"], "):  ", spaces_p2, row_p2[matchvar]))
+                    message(paste0("Matched:           ", row_p1[paste0(matchvar, "_matched")]))
+                    message(paste0("Score:             ", row_p1[paste0(matchvar, "_score")]))
+                    # user confirmation
+                    userinput <- readline(
+                        prompt = "[Enter] next match / ['next' + Enter] next variable / ['exit' + Enter] exit : "
+                        )
+                    if (grepl("^exit", userinput)) {
+                        # exit
+                        stop("User exited.")
+                    } else if (grepl("^next", userinput)) {
+                        # jump to next
+                        continue <- FALSE
+                        }
+                } else {
                     continue <- FALSE
                     }
                 }
@@ -166,7 +174,15 @@ compare_by_id(
 ### TEST 2 ########################################################################
 
 # (1) look at everything: exact and fuzzy, matched or not
-check_matches(df = df, matchparams = matchparams)
+check_matches(
+    df = df,
+    matchvars = get_matchvars(matchparams = matchparams),
+    matchdummyvalues = c(NA)
+    )
 
-# (2) look only at successful fuzzy matches 
-# check_matches(df=df, matchparams=matchparams, fuzzyonly = TRUE, matchdummyvalues = c(1))
+# (2) look only at successful fuzzy matches
+check_matches(
+    df = df,
+    matchvars = get_matchvars(matchparams = matchparams, fuzzyonly = TRUE),
+    matchdummyvalues = c(1)
+    )

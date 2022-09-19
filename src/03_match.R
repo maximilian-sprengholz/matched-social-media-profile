@@ -146,12 +146,8 @@ matcher <- function(
                             # count
                             if (simscore < simlow) {
                                 nmatches_simlow <<- nmatches_simlow + 1
-                                message("Simlow count: ", nmatches_simlow)
-                                flush.console()
                             } else {
                                 nmatches_simhigh <<- nmatches_simhigh + 1
-                                message("Simhigh count: ", nmatches_simhigh)
-                                flush.console()
                                 }
                             # return match dummies and scores (extract from match_results col)
                             row_matched <- match_results[, c('matchvar', 'score', 'matched')] %>%
@@ -334,7 +330,7 @@ df_matches <- matcher(
     maxmatches_simhigh = 5
     )
 
-merge in long format (1 row per match per person).
+# merge in long format (1 row per match per person).
 df <- merge(df, df_matches, by = "lfdn", all = TRUE)
 
 # save
@@ -360,7 +356,6 @@ df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
 
 # number of matches per person (= number of rows per lfdn)
 df %>% select(c(lfdn)) %>% group_by(lfdn) %>% count() %>% summarize(n)
-df %>% select(c(lfdn)) %>% filter(lfdn == 738)
 
 # polsim (opinion essay)
 df <- df %>% mutate(match_polsim = ifelse(
@@ -392,7 +387,8 @@ df$match_group[df$match_polsim == 0 & df$match_nonpolsim == 0] <- "Different opi
 
 # missing ANY match group?
 all <- df %>% select(c(lfdn, match_group)) %>% group_by_at("lfdn") %>% slice_sample()
-nonmi <- df %>% select(c(lfdn, match_group)) %>%
+nonmi <- df %>%
+    select(c(lfdn, match_group)) %>%
     filter(!is.na(match_group)) %>%
     group_by_at("lfdn") %>%
     slice_sample()
@@ -407,7 +403,7 @@ df_random_match <- df %>%
     slice_sample(n = 1) %>%
     select(c(lfdn, match_lfdn)) %>%
     mutate(match_profile_export = 1)
-df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
+df <- merge(df, df_random_match, by = c("lfdn", "match_lfdn"), all.x = TRUE, all.y = FALSE)
 
 # distribution of groups
 table(df %>% filter(match_profile_export == 1) %>% select(c(match_group)))

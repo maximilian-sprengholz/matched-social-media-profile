@@ -13,7 +13,7 @@ source("src/02_matchparams.R")
 exporter <- function(
         df,
         matchparams,
-        idcol="lfdn", # person id, NUMERIC (change as.numeric to as.character if not)
+        idcol = "lfdn", # person id, NUMERIC (change as.numeric to as.character if not)
         export_indicator, # dummy indicating which observations to be exported
         path_dir,
         valuesNA
@@ -53,12 +53,20 @@ exporter <- function(
                 path_file,
                 matchparams,
                 valuesNA)
-            # return url (only thing stored, to be merged to df)
-            return(data.frame(
-                idcol = df_row[1, idcol],
-                match_profile_url = path_file,
-                match_profile_simscore = profile_simscore
-                ))
+            # return profile and merge info
+            df_profiles <- data.frame(
+                df_row[1, idcol],
+                match_id,
+                path_file,
+                profile_simscore
+                )
+            colnames(df_profiles) <- c(
+                idcol,
+                paste0("match_", idcol),
+                "match_profile_url",
+                "match_profile_simscore"
+                )
+            return(df_profiles)
             })
     }
 
@@ -214,7 +222,7 @@ select_subset <- function(group, matchparams, item_set, df_row) {
         # worst -> increasing
         df_item_set <- df_item_set[
             order(
-                df_item_set$simscore, 
+                df_item_set$simscore,
                 sample(nrow(df_item_set), nrow(df_item_set)),
                 na.last = TRUE
                 )
@@ -252,12 +260,12 @@ profiles <- exporter(
     df = df,
     matchparams = matchparams,
     export_indicator = "match_profile_export",
-    path_dir = paste0(wd,"/profiles/"), # where to store the profiles
+    path_dir = paste0(wd, "/profiles/"), # where to store the profiles
     valuesNA = c("-99", "-66", ".", "", "NA", NA) # print string values no to export
     )
 
 # merge back to df
-df <- merge(df, profiles, by = "lfdn", all = TRUE)
+df <- merge(df, profiles, by = c("lfdn", "match_lfdn"), all.x = TRUE, all.y = FALSE)
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_export.feather"))
