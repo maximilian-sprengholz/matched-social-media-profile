@@ -107,12 +107,12 @@ check_matches <- function(
                     message(paste0("Score:             ", row_p1[paste0(matchvar, "_score")]))
                     # user confirmation
                     userinput <- readline(
-                        prompt = "[Enter] next match / ['next' + Enter] next variable / ['exit' + Enter] exit : "
+                        prompt = "[Enter] next match / ['n' + Enter] next variable / ['e' + Enter] exit : "
                         )
-                    if (grepl("^exit", userinput)) {
+                    if (grepl("^e", userinput)) {
                         # exit
                         stop("User exited.")
-                    } else if (grepl("^next", userinput)) {
+                    } else if (grepl("^n", userinput)) {
                         # jump to next
                         continue <- FALSE
                         }
