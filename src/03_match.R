@@ -35,13 +35,13 @@ source("src/02_matchparams.R")
 
 matcher <- function(
         df,
-        idcol="lfdn", # person id, numeric
+        idcol = "lfdn", # person id, numeric
         matchparams, # dict containing all var-specific parameters
         valuesNA, # vector of values that should not be matched
-        simlow=300, # simscore value below which similarity is low
-        simhigh=600, # simscore value above which similarity is high
-        maxmatches_simlow=5, # max no of low-similarity matches allowed per person
-        maxmatches_simhigh=5, # max no of high-similarity matches allowed per person
+        simlow = 300, # simscore value below which similarity is low
+        simhigh = 600, # simscore value above which similarity is high
+        maxmatches_simlow = 5, # max no of low-similarity matches allowed per person
+        maxmatches_simhigh = 5, # max no of high-similarity matches allowed per person
         opinionvar = "essay_opinion_prior" # opinion dummy
         ) {
 
@@ -49,7 +49,9 @@ matcher <- function(
     matchvars <- c()
     matchvars <- unlist(sapply(
       unlist(matchparams$keys()),
-      function(x) { matchvars <- c(matchvars, matchparams$get(x)$get("items")$keys()) }
+      function(x) {
+        matchvars <- c(matchvars, matchparams$get(x)$get("items")$keys())
+        }
       ))
     df_matchsubset <- df[, c(idcol, opinionvar, matchvars)]
 
@@ -63,7 +65,7 @@ matcher <- function(
 
             # keep track in terminal
             pcnt <<- pcnt + 1
-            message(paste0("Matching ", pcnt, "/", ptot, "."), "\r", appendLF=FALSE)
+            message(paste0("Matching ", pcnt, "/", ptot, "."), "\r", appendLF = FALSE)
             flush.console()
 
             # data of person 1 for whom we search matches
@@ -71,9 +73,9 @@ matcher <- function(
 
             # dataframe containing all others, shuffled
             df_p2 <- df_matchsubset[
-              !df_matchsubset[idcol]==as.numeric(row_p1[idcol])
+              !df_matchsubset[idcol] == as.numeric(row_p1[idcol])
               ,]
-            df_p2 <- df_p2[sample(nrow(df_p2)),]
+            df_p2 <- df_p2[sample(nrow(df_p2)), ]
 
             # count toward maximum no of matches allowed
             nmatches_simlow <- 0
@@ -84,8 +86,8 @@ matcher <- function(
                 pmap_dfr(function(...) {
 
                     # do not bother after having enough matches
-                    if ((nmatches_simlow < maxmatches_simlow)
-                         || (nmatches_simhigh < maxmatches_simhigh)) {
+                    if ((nmatches_simlow <= maxmatches_simlow)
+                         || (nmatches_simhigh <= maxmatches_simhigh)) {
 
                         # person 2 row from matching set
                         row_p2 <- tibble(...)
@@ -99,7 +101,7 @@ matcher <- function(
                                 # check if cells contain something
                                 if (matchvar != idcol
                                     && matchvar != opinionvar
-                                    && length(p1)==1 && length(p2)==1
+                                    && length(p1) == 1 && length(p2) == 1
                                     && !is.na(p1) && !is.na(p2)) {
 
                                     # get item parameter sub-dict
@@ -127,8 +129,8 @@ matcher <- function(
                                         matchvarparams$get("fuzzy", FALSE),
                                         matchvarparams$get("fuzzy_distperchar", 0.33)
                                         )
-                                    matched <- ifelse(score>0 && !is.na(score), 1, 0)
-                                    result <- data.frame (
+                                    matched <- ifelse(score > 0 && !is.na(score), 1, 0)
+                                    result <- data.frame(
                                         matchvar = matchvar,
                                         score = score,
                                         matched = matched
@@ -139,15 +141,20 @@ matcher <- function(
 
                         # sum scores, return match only if similarity high or low
                         simscore <- colSums(match_results['score'], na.rm=TRUE)
-                        if (simscore<simlow || simscore>simhigh) {
+                        if ((simscore < simlow & nmatches_simlow <= maxmatches_simlow)
+                                | (simscore > simhigh & nmatches_simhigh <= maxmatches_simhigh)) {
                             # count
-                            if (simscore<simlow) {
+                            if (simscore < simlow) {
                                 nmatches_simlow <<- nmatches_simlow + 1
+                                message("Simlow count: ", nmatches_simlow)
+                                flush.console()
                             } else {
                                 nmatches_simhigh <<- nmatches_simhigh + 1
+                                message("Simhigh count: ", nmatches_simhigh)
+                                flush.console()
                                 }
                             # return match dummies and scores (extract from match_results col)
-                            row_matched <- match_results[,c('matchvar', 'score', 'matched')] %>%
+                            row_matched <- match_results[, c('matchvar', 'score', 'matched')] %>%
                                 pivot_wider(
                                     names_from = matchvar,
                                     values_from = c(matched, score),
@@ -175,7 +182,7 @@ matcher <- function(
         )
         # message success, return all matches
         message("\nDone.")
-        return(df_match_all) 
+        return(df_match_all)
     }
 
 match_values <- function(
@@ -183,7 +190,7 @@ match_values <- function(
         p2,
         matchvar,
         matchvarparams,
-        valuesNA=valuesNA,
+        valuesNA = valuesNA,
         split,
         fuzzy,
         fuzzy_distperchar
@@ -211,10 +218,10 @@ match_values <- function(
     # pop NA elements, continue only if vector length>0
     p1 <- setdiff(unlist(p1), valuesNA)
     p2 <- setdiff(unlist(p2), valuesNA)
-    if (length(p1)>0 && length(p2)>0) {
+    if (length(p1) > 0 && length(p2) > 0) {
 
         # match
-        if (fuzzy==TRUE) {
+        if (fuzzy == TRUE) {
             '
             Element by element comparison for maximum flexibility in terms of
             cleaning, checking, and fuzzy matching parameters.
@@ -226,11 +233,11 @@ match_values <- function(
             p2 <- str_to_lower(p2)
             # fuzzy matching
             common <- unlist(lapply(p1, function(str1) {
-                # workaround for lapply not accepting continue: 
+                # workaround for lapply not accepting continue:
                 # return NA if str1 is already matched
                 str1matched <- 0
                 unlist(lapply(p2, function(str2) {
-                    if (str1matched==0) {
+                    if (str1matched == 0) {
                         # compute maximum distance based on passed string length
                         # and factor fuzzy_distperchar; minimum is 1
                         dist <- ifelse(
@@ -240,7 +247,7 @@ match_values <- function(
                             )
                         # implement exception handling to know whats going on
                         tryCatch(
-                            matchpos <- amatch(str1, str2, maxDist=dist),
+                            matchpos <- amatch(str1, str2, maxDist = dist),
                             error = function(e) {
                                 flush.console()
                                 message(paste0("Caught error: ", e))
@@ -269,7 +276,7 @@ match_values <- function(
             }
 
         # score each match
-        if (length(common)>0 && !any(is.na(common))) {
+        if (length(common) > 0 && !any(is.na(common))) {
             score <- match_score(matchvar, matchvarparams, common)
         } else {
             score <- 0
@@ -295,8 +302,8 @@ match_score <- function(matchvar, matchvarparams, common) {
     '
     weight <- matchvarparams$get("weight") # throws error if not set
     if (is.function(weight)) {
-        score <- weight(value=common[1], common=common)
-        if (length(score)==0) {
+        score <- weight(value = common[1], common = common)
+        if (length(score) == 0) {
             # debug missing scores
             message(paste0(
                 "No score found for ", matchvar, " [", common[1],
@@ -316,22 +323,21 @@ match_score <- function(matchvar, matchvarparams, common) {
 # import cleaned data
 df <- read_feather(paste0(wd, "/data/pre_match.feather"))
 
-
 # match
 df_matches <- matcher(
-    df=df,
-    matchparams=matchparams,
-    valuesNA=c("-99", "-66", ".", "", "NA", NA),
-    simlow=399,
-    simhigh=699,
-    maxmatches_simlow=5,
-    maxmatches_simhigh=5
+    df = df,
+    matchparams = matchparams,
+    valuesNA = c("-99", "-66", ".", "", "NA", NA),
+    simlow = 399,
+    simhigh = 699,
+    maxmatches_simlow = 5,
+    maxmatches_simhigh = 5
     )
 
-# merge in long format (1 row per match per person).
-df <- merge(df, df_matches, by="lfdn", all=TRUE)
+merge in long format (1 row per match per person).
+df <- merge(df, df_matches, by = "lfdn", all = TRUE)
 
-# save (temp)
+# save
 write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
 
 
@@ -348,6 +354,14 @@ write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
 
  Selected match: match_profile_export = 1
 '
+
+# import matched data
+df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
+
+# number of matches per person (= number of rows per lfdn)
+df %>% select(c(lfdn)) %>% group_by(lfdn) %>% count() %>% summarize(n)
+df %>% select(c(lfdn)) %>% filter(lfdn == 738)
+
 # polsim (opinion essay)
 df <- df %>% mutate(match_polsim = ifelse(
     essay_opinion_prior == match_essay_opinion_prior, 1, 0
@@ -357,29 +371,46 @@ df <- df %>% mutate(match_polsim = ifelse(
 df_match_best <- df %>% group_by_at("lfdn") %>%
     slice(which.max(match_simscore)) %>%
     mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+    select(c(lfdn, match_lfdn, match_nonpolsim)) %>%
+    filter(!is.na(match_nonpolsim))
 df_match_worst <- df %>% group_by_at("lfdn") %>%
     slice(which.min(match_simscore)) %>%
     mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>% filter(!is.na(match_nonpolsim))
+    select(c(lfdn, match_lfdn, match_nonpolsim)) %>%
+    filter(!is.na(match_nonpolsim))
 df <- merge(
-    df, rbind(df_match_best, df_match_worst), by=c("lfdn", "match_lfdn"),
-    all.x=TRUE, all.y=FALSE
+    df, rbind(df_match_best, df_match_worst), by = c("lfdn", "match_lfdn"),
+    all.x = TRUE, all.y = FALSE
     )
 
 # match_group
 df$match_group <- NA
-df$match_group[df$match_polsim==1 & df$match_nonpolsim==1] <- "Same opinion, same characteristics"
-df$match_group[df$match_polsim==1 & df$match_nonpolsim==0] <- "Same opinion, different characteristics"
-df$match_group[df$match_polsim==0 & df$match_nonpolsim==1] <- "Different opinion, same characteristics"
-df$match_group[df$match_polsim==0 & df$match_nonpolsim==0] <- "Different opinion, different characteristics"
+df$match_group[df$match_polsim == 1 & df$match_nonpolsim == 1] <- "Same opinion, same characteristics"
+df$match_group[df$match_polsim == 1 & df$match_nonpolsim == 0] <- "Same opinion, different characteristics"
+df$match_group[df$match_polsim == 0 & df$match_nonpolsim == 1] <- "Different opinion, same characteristics"
+df$match_group[df$match_polsim == 0 & df$match_nonpolsim == 0] <- "Different opinion, different characteristics"
+
+# missing ANY match group?
+all <- df %>% select(c(lfdn, match_group)) %>% group_by_at("lfdn") %>% slice_sample()
+nonmi <- df %>% select(c(lfdn, match_group)) %>%
+    filter(!is.na(match_group)) %>%
+    group_by_at("lfdn") %>%
+    slice_sample()
+nmi <- nrow(all) - nrow(nonmi)
+print(paste0("No match group found for ", nmi, " persons."))
 
 # match_profile_export = random selection of match_group
 set.seed(42)
-df_random_match <- df %>% group_by_at("lfdn") %>% filter(!is.na(match_group)) %>%
-    slice_sample(n = 1) %>% select(c(lfdn, match_lfdn)) %>%
+df_random_match <- df %>% 
+    group_by_at("lfdn") %>% 
+    filter(!is.na(match_group)) %>%
+    slice_sample(n = 1) %>%
+    select(c(lfdn, match_lfdn)) %>%
     mutate(match_profile_export = 1)
 df <- merge(df, df_random_match, by=c("lfdn", "match_lfdn"), all.x=TRUE, all.y=FALSE)
+
+# distribution of groups
+table(df %>% filter(match_profile_export == 1) %>% select(c(match_group)))
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_match.feather"))

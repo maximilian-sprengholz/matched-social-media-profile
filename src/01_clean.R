@@ -526,7 +526,7 @@ df$webchannels <- clean_open_answers(df$webchannels, replace_pattern, to_comma_p
 df <- rename(df, creative_orig = creative)
 # remove print context
 df$creative <- gsub(
-  "^Viel Freude macht mir auch '|'[.]$", "", 
+  "^Viel Freude macht mir auch '|'[.]$", "",
   df$creative_orig
   )
 # delete everything in parentheses and after dashes
