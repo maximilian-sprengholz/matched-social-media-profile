@@ -176,8 +176,7 @@ compare_by_id(
 # (1) look at everything: exact and fuzzy, matched or not
 check_matches(
     df = df,
-    matchvars = get_matchvars(matchparams = matchparams),
-    matchdummyvalues = c(NA)
+    matchvars = get_matchvars(matchparams = matchparams)
     )
 
 # (2) look only at successful fuzzy matches
