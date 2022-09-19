@@ -172,7 +172,6 @@ df$education <- gsub("^ei[ne]+ |[.]$", "", df$education)
 df <- rename(df, college_orig = college)
 # remove print context
 df$college <- gsub("^Studiert habe ich hier: |[.]$", "", df$college_orig)
-df$college
 
 # gayfriends
 
@@ -540,11 +539,9 @@ df$creative <- clean_open_answers(df$creative, replace_pattern, to_comma_pattern
 
 
 ### GENERAL STRING CLEANING ###
-'
-Perhaps also encoding stuff can be done here (or at the beginning of this file).
-'
 df %>%
-  mutate_if(is.character, str_trim)
+  mutate(across(where(~is.character(.)), ~gsub("\\s+", " ", .))) %>%
+  mutate(across(where(~is.character(.)), ~str_trim(.)))
 
 
 ### SAVE ###

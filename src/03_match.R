@@ -244,7 +244,7 @@ match_values <- function(
                             error = function(e) {
                                 flush.console()
                                 message(paste0("Caught error: ", e))
-                                message(paste0("Compared ", matchvar, "with: ", str1, " and ", str2, " with dist=", dist))
+                                message(paste0("Compared ", matchvar, " with: '", str1, "' and '", str2, "'' with dist=", dist))
                                 matchpos <<- NA
                                 }
                             )
@@ -315,6 +315,7 @@ match_score <- function(matchvar, matchvarparams, common) {
 
 # import cleaned data
 df <- read_feather(paste0(wd, "/data/pre_match.feather"))
+
 
 # match
 df_matches <- matcher(
