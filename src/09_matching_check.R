@@ -176,6 +176,16 @@ compare_by_id(
 
 
 ### TEST 2 ########################################################################
+'
+The second set of tests checks if the matchin algorithm matched correctly. Please
+run the following functions one after another and check if the results make sense:
+
+- match status should be 1 if values the same (or very close), 0 if values are different,
+  and NA if any of the values is NA
+- Scores should be >0 if matched == 1, score == 0 if matched == 0, score == NA if matched == NA
+
+Note any peculiarities.
+'
 
 # (1) look at everything: exact and fuzzy, matched or not
 check_matches(
