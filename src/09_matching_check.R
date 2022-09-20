@@ -68,10 +68,14 @@ compare_by_id <- function(df, matchvars = c(), pid, matchid) {
 
 check_matches <- function(
         df,
-        matchvars,
+        matchvars, # dict containing all var-specific parameters
         matchdummyvalues = c(0, 1, NA) # vector of match results to check (unmatched, matched, NA)
         ) {
-
+    '
+    This function provides a step-by-step checking of matches via an interactive sesstion.
+    Variabel by variable, a random selection of match pairs is presented with the respective
+    values, match result, and match score.
+    '
     # subset dataframe to contain just matching specific columns; and what's in the df
     cols <- c(
         "lfdn", matchvars, "match_lfdn", paste0(matchvars, "_matched"), paste0(matchvars, "_score")
