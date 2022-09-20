@@ -255,13 +255,17 @@ exported for the match or not (in this case: match_profile_export).
 # import matched data
 df <- read_feather(paste0(wd, "/data/post_match.feather"))
 
+# delete old files
+docs <- list.files(path = paste0(wd, "/profiles"), pattern = "*.html")
+if (length(docs) > 0) file.remove(paste0(wd, "/profiles/", docs))
+
 # export
 profiles <- exporter(
     df = df,
     matchparams = matchparams,
     export_indicator = "match_profile_export",
     path_dir = paste0(wd, "/profiles/"), # where to store the profiles
-    valuesNA = c("-99", "-66", ".", "", "NA", NA) # print string values no to export
+    valuesNA = c("-99", "-66", ".", "", "NA", NA) # print string values not to export
     )
 
 # merge back to df
@@ -269,3 +273,10 @@ df <- merge(df, profiles, by = c("lfdn", "match_lfdn"), all.x = TRUE, all.y = FA
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_export.feather"))
+
+### export match correspondence table
+df_matches <- df %>%
+    filter(match_profile_export == 1) %>%
+    select(c(lfdn, match_lfdn, match_profile_url)) %>%
+    mutate(match_profile_url = gsub(wd, "", match_profile_url))
+write.csv(df_matches, paste0(wd, "/data/match_id_correspondence.csv"), row.names = FALSE)

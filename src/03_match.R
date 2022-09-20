@@ -38,8 +38,8 @@ matcher <- function(
         idcol = "lfdn", # person id, numeric
         matchparams, # dict containing all var-specific parameters
         valuesNA, # vector of values that should not be matched
-        simlow = 300, # simscore value below which similarity is low
-        simhigh = 600, # simscore value above which similarity is high
+        simlow = 300, # similarity is low <= value
+        simhigh = 600, # similarity is high >= value
         maxmatches_simlow = 5, # max no of low-similarity matches allowed per person
         maxmatches_simhigh = 5, # max no of high-similarity matches allowed per person
         opinionvar = "essay_opinion_prior" # opinion dummy
@@ -88,10 +88,11 @@ matcher <- function(
                     # do not bother after having enough matches
                     if ((nmatches_simlow <= maxmatches_simlow)
                          || (nmatches_simhigh <= maxmatches_simhigh)) {
-
+                        
                         # person 2 row from matching set
                         row_p2 <- tibble(...)
 
+                        # count no. of matching attempts ()
                         ### Step 3: match variables, gather match scores
                         match_results <- pmap_dfr(
                             list(row_p1, row_p2, names(row_p2)),
@@ -139,14 +140,18 @@ matcher <- function(
                                 }
                             )
 
-                        # sum scores, return match only if similarity high or low
-                        simscore <- colSums(match_results['score'], na.rm=TRUE)
-                        if ((simscore < simlow & nmatches_simlow <= maxmatches_simlow)
-                                | (simscore > simhigh & nmatches_simhigh <= maxmatches_simhigh)) {
+                        # sum scores, return matches:
+                        # if sim high and highsim matches needed
+                        # if sim low and lowsim matches needed
+                        # if sim neither high nor low and no lowsim OR no highsim matches yet
+                        simscore <- colSums(match_results['score'], na.rm = TRUE)
+                        if ((simscore <= simlow & nmatches_simlow <= maxmatches_simlow)
+                                | (simscore >= simhigh & nmatches_simhigh <= maxmatches_simhigh)
+                                | (simscore > simlow & simscore < simhigh)) {
                             # count
                             if (simscore < simlow) {
                                 nmatches_simlow <<- nmatches_simlow + 1
-                            } else {
+                            } else if (simscore > simhigh) {
                                 nmatches_simhigh <<- nmatches_simhigh + 1
                                 }
                             # return match dummies and scores (extract from match_results col)
