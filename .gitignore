@@ -1,4 +1,4 @@
-/data/**
+/data/*.feather
 /env
 src/.Rhistory
 .Rhistory
