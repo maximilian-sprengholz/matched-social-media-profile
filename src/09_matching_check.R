@@ -41,7 +41,7 @@ get_matchvars <- function(
 
 compare_by_id <- function(df, matchvars = c(), pid, matchid) {
     '
-    This function takes a person id (lfdn) and a match id (match_lfdn) and extracts a single
+    This function takes a person id (c_0116) and a match id (match_c_0116) and extracts a single
     row per person from the dataframe, and presents them side-by-side as transposed columns.
     - matchvars = vector of variables (column names) to be printed
     '
@@ -49,16 +49,16 @@ compare_by_id <- function(df, matchvars = c(), pid, matchid) {
     # subset dataframe if matchvar vector passed
     if (length(matchvars) > 0) df <- df %>% select(c(matchvars))
     # select rows of persons (random row for matchas matching not necessarily bi-directional)
-        print(df %>% filter(lfdn == pid & match_lfdn == matchid))
-    print(df %>% filter(lfdn == matchid) %>% slice_sample())
+        print(df %>% filter(c_0116 == pid & match_c_0116 == matchid))
+    print(df %>% filter(c_0116 == matchid) %>% slice_sample())
     df_match_pair <- rbind(
-        df %>% filter(lfdn == pid & match_lfdn == matchid),
-        df %>% filter(lfdn == matchid) %>% slice_sample()
+        df %>% filter(c_0116 == pid & match_c_0116 == matchid),
+        df %>% filter(c_0116 == matchid) %>% slice_sample()
         )
     # pivot and trim string length to allow side-by-side output
     df_match_pair <- df_match_pair %>%
-        pivot_longer(, cols = -lfdn, values_transform = as.character) %>%
-        pivot_wider(, names_from = lfdn) %>%
+        pivot_longer(, cols = -c_0116, values_transform = as.character) %>%
+        pivot_wider(, names_from = c_0116) %>%
         as.data.frame() %>%
         mutate_all(~strtrim(., 50)) # trim s
     # print
@@ -78,7 +78,7 @@ check_matches <- function(
     '
     # subset dataframe to contain just matching specific columns; and what's in the df
     cols <- c(
-        "lfdn", matchvars, "match_lfdn", paste0(matchvars, "_matched"), paste0(matchvars, "_score")
+        "c_0116", matchvars, "match_c_0116", paste0(matchvars, "_matched"), paste0(matchvars, "_score")
         )
     cols <- cols[cols %in% colnames(df)]
     df <- df %>% select(cols)
@@ -91,7 +91,7 @@ check_matches <- function(
             # runs forever if no manual user abort via terminal input
             while (continue == TRUE) {
                 # subset, check if non-empty
-                df_matchvar <- df %>% select(ends_with("lfdn") | starts_with(matchvar))
+                df_matchvar <- df %>% select(ends_with("c_0116") | starts_with(matchvar))
                 # randomly select p1 row, check if empty
                 row_p1 <- df_matchvar %>%
                     filter(.data[[paste0(matchvar, "_matched")]] %in% matchdummyvalues)
@@ -99,14 +99,14 @@ check_matches <- function(
                     row_p1 <- row_p1 %>% slice_sample(n = 1)
                     # select match row
                     row_p2 <- df_matchvar %>%
-                        filter(lfdn %in% row_p1["match_lfdn"]) %>%
+                        filter(c_0116 %in% row_p1["match_c_0116"]) %>%
                         slice_sample(n = 1)
                     # display
-                    spaces_p1 <- replicate(5 - nchar(as.character(row_p1["lfdn"])), " ")
-                    spaces_p2 <- replicate(5 - nchar(as.character(row_p2["lfdn"])), " ")
+                    spaces_p1 <- replicate(5 - nchar(as.character(row_p1["c_0116"])), " ")
+                    spaces_p2 <- replicate(5 - nchar(as.character(row_p2["c_0116"])), " ")
                     message(paste0("Matchvar:          ", matchvar))
-                    message(paste0("Value P1 (", row_p1["lfdn"], "):  ", spaces_p1, row_p1[matchvar]))
-                    message(paste0("Value P2 (", row_p2["lfdn"], "):  ", spaces_p2, row_p2[matchvar]))
+                    message(paste0("Value P1 (", row_p1["c_0116"], "):  ", spaces_p1, row_p1[matchvar]))
+                    message(paste0("Value P2 (", row_p2["c_0116"], "):  ", spaces_p2, row_p2[matchvar]))
                     message(paste0("Matched:           ", row_p1[paste0(matchvar, "_matched")]))
                     message(paste0("Score:             ", row_p1[paste0(matchvar, "_score")]))
                     # user confirmation
@@ -149,29 +149,29 @@ Please check the top-25 and bottom-25 of matches as shown below and note any pec
 # high/low values
 summary(df$match_simscore)
 df_simhigh <- df %>%
-    select(c(lfdn, match_lfdn, match_simscore, match_profile_simscore)) %>%
+    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
     arrange(desc(match_simscore)) %>%
     slice_head(n = 25)
 print(df_simhigh)
 df_simlow <- df %>% 
-    select(c(lfdn, match_lfdn, match_simscore, match_profile_simscore)) %>%
+    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
     arrange(match_simscore) %>%
     slice_head(n = 25)
 print(df_simlow)
 
 # subset (save memory)
-df_matchvars <- df %>% select(c("lfdn", "match_lfdn", get_matchvars(matchparams = matchparams)))
+df_matchvars <- df %>% select(c("c_0116", "match_c_0116", get_matchvars(matchparams = matchparams)))
 
 # check manually for high/low simscores and each match (= 1 row in the corresponding df)
 compare_by_id(
     df = df_matchvars,
-    pid = as.numeric(df_simhigh[1, "lfdn"]),
-    matchid = as.numeric(df_simhigh[1, "match_lfdn"])
+    pid = as.numeric(df_simhigh[1, "c_0116"]),
+    matchid = as.numeric(df_simhigh[1, "match_c_0116"])
     )
 compare_by_id(
     df = df_matchvars,
-    pid = as.numeric(df_simlow[1, "lfdn"]),
-    matchid = as.numeric(df_simlow[1, "match_lfdn"])
+    pid = as.numeric(df_simlow[1, "c_0116"]),
+    matchid = as.numeric(df_simlow[1, "match_c_0116"])
     )
 
 

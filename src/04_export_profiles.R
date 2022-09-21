@@ -13,8 +13,8 @@ source("src/02_matchparams.R")
 
 exporter <- function(
         df,
-        matchparams,
-        idcol = "lfdn", # person id, NUMERIC (change as.numeric to as.character if not)
+        idcol, # person ids, numeric
+        matchparams, # dict containing all matching parameters
         export_indicator, # dummy indicating which observations to be exported
         path_dir,
         valuesNA
@@ -31,7 +31,7 @@ exporter <- function(
     '
 
     # for each person and match, export match profile and add file name/url to df;
-    # fetch info via match_id (match_lfdn), use only print strings and id info
+    # fetch info via match_id (match_c_0116), use only print strings and id info
     df_match_export <- df[
         df[export_indicator] == 1 & !is.na(df[export_indicator])
         ,
@@ -263,6 +263,7 @@ if (length(docs) > 0) file.remove(paste0(wd, "/profiles/", docs))
 # export
 profiles <- exporter(
     df = df,
+    idcol = "c_0116",
     matchparams = matchparams,
     export_indicator = "match_profile_export",
     path_dir = paste0(wd, "/profiles/"), # where to store the profiles
@@ -270,7 +271,7 @@ profiles <- exporter(
     )
 
 # merge back to df
-df <- merge(df, profiles, by = c("lfdn", "match_lfdn"), all.x = TRUE, all.y = FALSE)
+df <- merge(df, profiles, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE)
 
 # save (might be HUGE if match no. is not restricted!)
 write_feather(df, paste0(wd, "/data/post_export.feather"))
@@ -278,6 +279,6 @@ write_feather(df, paste0(wd, "/data/post_export.feather"))
 ### export match correspondence table
 df_matches <- df %>%
     filter(match_profile_export == 1) %>%
-    select(c(lfdn, match_lfdn, match_profile_url)) %>%
+    select(c(c_0116, match_c_0116, match_profile_url)) %>%
     mutate(match_profile_url = gsub(wd, "", match_profile_url))
 write.csv(df_matches, paste0(wd, "/data/match_id_correspondence.csv"), row.names = FALSE)
