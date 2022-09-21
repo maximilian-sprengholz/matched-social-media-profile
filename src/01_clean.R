@@ -10,6 +10,9 @@
   that they can be fed to the matcher.
 '
 
+### PARAMETERS ###
+set.seed(42)
+
 ### FUNCTIONS ###
 
 clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
@@ -28,7 +31,6 @@ clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
   dfcol <- gsub("^,\\s|^,|,\\s$|,$|\\s,", "", dfcol)
 
   }
-
 
 ### DEMOGRAPHICS ###
 
@@ -544,6 +546,8 @@ df %>%
   mutate(across(where(~is.character(.)), ~gsub("\\s+", " ", .))) %>%
   mutate(across(where(~is.character(.)), ~str_trim(.)))
 
+### HELPER VARS ###
+df <- df %>% mutate(matchable = ifelse(useable == "1 Yes", 1, 0))
 
 ### SAVE ###
 write_feather(df, paste0(wd, "/data/pre_match.feather"))

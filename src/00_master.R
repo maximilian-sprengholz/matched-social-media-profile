@@ -19,7 +19,6 @@ library(stringi)
 library(feather)
 
 ### definitions
-set.seed(42)
 `%!in%` <- Negate(`%in%`)
 wd <- '/home/max/Seafile/Projects/matched-social-media-profile'
 setwd(wd)
@@ -28,7 +27,6 @@ setwd(wd)
 
 # sample data (use smaller subset to speed up matching)
 df <- read_csv(paste0(wd, "/data/testdata_2022-09-12.csv"))
-#df <- df[1:50, ]
 
 # clean
 source("src/01_clean.R")

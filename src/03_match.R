@@ -19,15 +19,22 @@ Changes 2022-07-08:
   score (just point to the matched person data row)
 
 Changes 2022-08-18:
-- Return dummy for each variable with a match (match_[varname]=0/1)
+- Return dummy for each variable with a match (match_[varname]=0/1/NA)
 
 Changes 2022-09-07:
 - Return score for each match, so that we can select variables with the 
   highest/lowest weights for the profile
 
+Changes 2022-09-20:
+- new selection rules for 
+    (1) the sample for which we search matches and 
+    (2) the sample from which we draw the matches
+- speeded up matching by checking group wise if maxmatches reached
+- counter of considered matched until maxmatches reached
 '
 
 ### PARAMETERS ###
+set.seed(42)
 source("src/02_matchparams.R")
 
 
@@ -36,31 +43,38 @@ source("src/02_matchparams.R")
 matcher <- function(
         df,
         idcol = "lfdn", # person id, numeric
-        matchparams, # dict containing all var-specific parameters
+        matchparams, # dict containing all matching parameters
         valuesNA, # vector of values that should not be matched
-        simlow = 300, # similarity is low <= value
+        simlow = 599, # similarity is low <= value
         simhigh = 600, # similarity is high >= value
-        maxmatches_simlow = 5, # max no of low-similarity matches allowed per person
-        maxmatches_simhigh = 5, # max no of high-similarity matches allowed per person
-        opinionvar = "essay_opinion_prior" # opinion dummy
+        maxmatches = 5, # n matches allowed per group (opinion (same/diff) x similarity (low/high))
+        opinionvar = "essay_opinion_prior", # opinion dummy
+        nsample = NA # integer, set if you want to select a subset for which a match is searched 
         ) {
 
-    ### Step 1: Extract row of one person with all the variables we match on
-    matchvars <- c()
-    matchvars <- unlist(sapply(
-      unlist(matchparams$keys()),
-      function(x) {
-        matchvars <- c(matchvars, matchparams$get(x)$get("items")$keys())
+    # get matchvars and corresponding parameters (create new dict)
+    matchvarparams <- dict()
+    for (k in unlist(matchparams$keys())) {
+        items <- matchparams$get(k)$get("items")
+        for (i in unlist(items$keys())) {
+            matchvarparams$set(i, items$get(i))
         }
-      ))
-    df_matchsubset <- df[, c(idcol, opinionvar, matchvars)]
+    }
+    matchvars <- unlist(matchvarparams$keys())
+
+    # subset df to contain just matching vars, and persons for which matches should be found
+    df_matchsubset <- df[, c(idcol, opinionvar, "matchable", matchvars)]
+    if (!is.numeric(nsample)) nsample <- nrow(df_matchsubset)
 
     # keep track in terminal
     message("\nMatcher started.")
-    ptot <- nrow(df_matchsubset)
+    ptot <- nsample
     pcnt <- 0
 
+
+    ### Step 1: Extract row of a single person (p1)
     df_match_all <- df_matchsubset %>%
+        slice_sample(n = nsample) %>%
         pmap_dfr(function(...) {
 
             # keep track in terminal
@@ -71,48 +85,49 @@ matcher <- function(
             # data of person 1 for whom we search matches
             row_p1 <- tibble(...)
 
-            # dataframe containing all others, shuffled
-            df_p2 <- df_matchsubset[
-              !df_matchsubset[idcol] == as.numeric(row_p1[idcol])
-              ,]
+            # dataframe containing all others with can be used in matching, shuffled
+            df_p2 <- df_matchsubset %>%
+                filter(idcol != as.numeric(row_p1[idcol]) & matchable == 1)
             df_p2 <- df_p2[sample(nrow(df_p2)), ]
 
-            # count toward maximum no of matches allowed
-            nmatches_simlow <- 0
-            nmatches_simhigh <- 0
+            # count toward maximum no of matches allowed per group
+            nmatches <- list(
+                opsame = list(simlow = 0, simhigh = 0),
+                opdiff = list(simlow = 0, simhigh = 0)
+            )
+
+            # count persons considered until maxmatches found for simlow/simhigh
+            nconsidered <- 0
+            nconsidered_simlow <- 0
+            nconsidered_simhigh <- 0
 
             ### Step 2: Match rows between p1 and all p2
             df_match_person <- df_p2 %>%
                 pmap_dfr(function(...) {
 
-                    # do not bother after having enough matches
-                    if ((nmatches_simlow <= maxmatches_simlow)
-                         || (nmatches_simhigh <= maxmatches_simhigh)) {
-                        
-                        # person 2 row from matching set
-                        row_p2 <- tibble(...)
+                    # person 2 row from matching set
+                    row_p2 <- tibble(...)
 
-                        # count no. of matching attempts ()
+                    # indicator if opinion matches (value = list element name in nmatches)
+                    opinion_matched <- ifelse(
+                        row_p1[opinionvar] == row_p2[opinionvar], "opsame", "opdiff"
+                        )
+
+                    # do not bother after having enough matches in group
+                    if (any(nmatches[[opinion_matched]] <= maxmatches)) {
+
+                        # count
+                        nconsidered <<- nconsidered + 1
+
                         ### Step 3: match variables, gather match scores
                         match_results <- pmap_dfr(
                             list(row_p1, row_p2, names(row_p2)),
                             function(p1, p2, matchvar) {
-
                                 # do not match on id
                                 # check if cells contain something
-                                if (matchvar != idcol
-                                    && matchvar != opinionvar
+                                if (! matchvar %in% c(idcol, opinionvar, "matchable")
                                     && length(p1) == 1 && length(p2) == 1
                                     && !is.na(p1) && !is.na(p2)) {
-
-                                    # get item parameter sub-dict
-                                    for (k in unlist(matchparams$keys())) {
-                                        items <- matchparams$get(k)$get("items")
-                                        if (items$has(matchvar)) {
-                                            matchvarparams <- items$get(matchvar)
-                                            break
-                                        }
-                                    }
 
                                     # match and score
                                     '
@@ -126,9 +141,9 @@ matcher <- function(
                                         p1, p2,
                                         matchvar, matchvarparams,
                                         valuesNA,
-                                        matchvarparams$get("split", FALSE),
-                                        matchvarparams$get("fuzzy", FALSE),
-                                        matchvarparams$get("fuzzy_distperchar", 0.33)
+                                        matchvarparams$get(matchvar)$get("split", FALSE),
+                                        matchvarparams$get(matchvar)$get("fuzzy", FALSE),
+                                        matchvarparams$get(matchvar)$get("fuzzy_distperchar", 0.33)
                                         )
                                     matched <- ifelse(score > 0 && !is.na(score), 1, 0)
                                     result <- data.frame(
@@ -140,21 +155,25 @@ matcher <- function(
                                 }
                             )
 
-                        # sum scores, return matches:
-                        # if sim high and highsim matches needed
-                        # if sim low and lowsim matches needed
-                        # if sim neither high nor low and no lowsim OR no highsim matches yet
+                        # sum scores, determine if return matches if still needed in group
                         simscore <- colSums(match_results['score'], na.rm = TRUE)
-                        if ((simscore <= simlow & nmatches_simlow <= maxmatches_simlow)
-                                | (simscore >= simhigh & nmatches_simhigh <= maxmatches_simhigh)
-                                | (simscore > simlow & simscore < simhigh)) {
-                            # count
-                            if (simscore < simlow) {
-                                nmatches_simlow <<- nmatches_simlow + 1
-                            } else if (simscore > simhigh) {
-                                nmatches_simhigh <<- nmatches_simhigh + 1
-                                }
-                            # return match dummies and scores (extract from match_results col)
+                        if (simscore <= simlow & nmatches[[opinion_matched]]$simlow <= maxmatches) {
+                            nmatches[[opinion_matched]]$simlow <<- nmatches[[opinion_matched]]$simlow + 1
+                            nconsidered_simlow <<- nconsidered
+                            save <- 1
+                        } else if (simscore >= simhigh & nmatches[[opinion_matched]]$simhigh <= maxmatches) {
+                            nmatches[[opinion_matched]]$simhigh <<- nmatches[[opinion_matched]]$simhigh + 1
+                            nconsidered_simhigh <<- nconsidered
+                            save <- 1
+                        } else if (simscore > simlow & simscore < simhigh) {
+                            save <- 1
+                        } else {
+                            save <- 0
+                            }
+
+                        # prep and return match data
+                        if (save == 1) {
+                            # match dummies and scores (extract from match_results col)
                             row_matched <- match_results[, c('matchvar', 'score', 'matched')] %>%
                                 pivot_wider(
                                     names_from = matchvar,
@@ -179,6 +198,12 @@ matcher <- function(
                         return(NULL)
                         }
                 })
+
+                # add counts of considered persons to df
+                df_match_person <- df_match_person %>% 
+                    mutate(nconsidered_simlow = nconsidered_simlow) %>%
+                    mutate(nconsidered_simhigh = nconsidered_simhigh)
+
             }
         )
         # message success, return all matches
@@ -301,7 +326,7 @@ match_score <- function(matchvar, matchvarparams, common) {
     The call mirrors the weights.js call of the Balietti paper (as far as I can
     judge without the original matching function).
     '
-    weight <- matchvarparams$get("weight") # throws error if not set
+    weight <- matchvarparams$get(matchvar)$get("weight") # throws error if not set
     if (is.function(weight)) {
         score <- weight(value = common[1], common = common)
         if (length(score) == 0) {
@@ -329,20 +354,20 @@ df_matches <- matcher(
     df = df,
     matchparams = matchparams,
     valuesNA = c("-99", "-66", ".", "", "NA", NA),
-    simlow = 399,
-    simhigh = 699,
-    maxmatches_simlow = 5,
-    maxmatches_simhigh = 5
+    simlow = 600,
+    simhigh = 601,
+    maxmatches = 2,
+    nsample = 5
     )
 
-# merge in long format (1 row per match per person).
+# # merge in long format (1 row per match per person).
 df <- merge(df, df_matches, by = "lfdn", all = TRUE)
 
 # save
 write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
 
 
-### SELECT MATCH ###############################################################
+## SELECT MATCH ###############################################################
 
 '
  Select a match for each person based on 4 match_group options
@@ -362,46 +387,35 @@ df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
 # number of matches per person (= number of rows per lfdn)
 df %>% select(c(lfdn)) %>% group_by(lfdn) %>% count() %>% summarize(n)
 
-# polsim (opinion essay)
-df <- df %>% mutate(match_polsim = ifelse(
-    essay_opinion_prior == match_essay_opinion_prior, 1, 0
-    ))
-
-# nonpolsim (simscore, check against user provided simscore bounds)
-df_match_best <- df %>% group_by_at("lfdn") %>%
+# match group: opinion (same/diff) x simscore (high/low)
+df_opsame_simhigh <- df %>% group_by_at("lfdn") %>%
+    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
     slice(which.max(match_simscore)) %>%
-    mutate(match_nonpolsim = ifelse(match_simscore > match_simhigh, 1, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>%
-    filter(!is.na(match_nonpolsim))
-df_match_worst <- df %>% group_by_at("lfdn") %>%
+    mutate(match_group = "Same opinion, same characteristics") %>%
+    select(c(lfdn, match_lfdn, match_group))
+df_opsame_simlow <- df %>% group_by_at("lfdn") %>%
+    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
     slice(which.min(match_simscore)) %>%
-    mutate(match_nonpolsim = ifelse(match_simscore < match_simlow, 0, NA)) %>%
-    select(c(lfdn, match_lfdn, match_nonpolsim)) %>%
-    filter(!is.na(match_nonpolsim))
+    mutate(match_group = "Same opinion, different characteristics") %>%
+    select(c(lfdn, match_lfdn, match_group))
+df_opdiff_simhigh <- df %>% group_by_at("lfdn") %>%
+    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
+    slice(which.max(match_simscore)) %>%
+    mutate(match_group = "Different opinion, same characteristics") %>%
+    select(c(lfdn, match_lfdn, match_group))
+df_opdiff_simlow <- df %>% group_by_at("lfdn") %>%
+    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
+    slice(which.min(match_simscore)) %>%
+    mutate(match_group = "Different opinion, different characteristics") %>%
+    select(c(lfdn, match_lfdn, match_group))
+
+# merge match group
 df <- merge(
-    df, rbind(df_match_best, df_match_worst), by = c("lfdn", "match_lfdn"),
-    all.x = TRUE, all.y = FALSE
+    df, rbind(df_opsame_simhigh, df_opsame_simlow, df_opdiff_simhigh, df_opdiff_simlow), 
+    by = c("lfdn", "match_lfdn"), all.x = TRUE, all.y = FALSE
     )
 
-# match_group
-df$match_group <- NA
-df$match_group[df$match_polsim == 1 & df$match_nonpolsim == 1] <- "Same opinion, same characteristics"
-df$match_group[df$match_polsim == 1 & df$match_nonpolsim == 0] <- "Same opinion, different characteristics"
-df$match_group[df$match_polsim == 0 & df$match_nonpolsim == 1] <- "Different opinion, same characteristics"
-df$match_group[df$match_polsim == 0 & df$match_nonpolsim == 0] <- "Different opinion, different characteristics"
-
-# missing ANY match group?
-all <- df %>% select(c(lfdn, match_group)) %>% group_by_at("lfdn") %>% slice_sample()
-nonmi <- df %>%
-    select(c(lfdn, match_group)) %>%
-    filter(!is.na(match_group)) %>%
-    group_by_at("lfdn") %>%
-    slice_sample()
-nmi <- nrow(all) - nrow(nonmi)
-print(paste0("No match group found for ", nmi, " persons."))
-
 # match_profile_export = random selection of match_group
-set.seed(42)
 df_random_match <- df %>% 
     group_by_at("lfdn") %>% 
     filter(!is.na(match_group)) %>%
