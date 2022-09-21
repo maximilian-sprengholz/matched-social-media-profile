@@ -131,13 +131,13 @@ df$secondgencountry_orig <- df$secondgencountry
 replace_pattern <- c(
   "kam", "mein", "aus", "einer", "mein", "ist", "er", "sie", "nur", "vater", "mutter",
   "opa", "oma", "großvater", "großmutter", "beide", "eltern\\S+", "haben", "zeitweise",
-  "damals", "wohl", "in", "im", "von", "stammt", "noch", "dem", "der", 
+  "damals", "wohl", "in", "im", "von", "stammt", "noch", "dem", "der",
   "die", "heut\\S+", "kolonie", "ehe\\S+", "hierher", "eingewandert", "früher", "meine"
   )
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$secondgencountry <- clean_open_answers(df$secondgencountry, replace_pattern, to_comma_pattern)
-# make spaces commas 
+# make spaces commas
 '
  This works because we only need one match to get a score, the numer of matches is irrelevant.
  So, even though "Puerto Rico" would be split, it does not matter if we match on both parts

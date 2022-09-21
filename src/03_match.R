@@ -357,8 +357,8 @@ df_matches <- matcher(
     valuesNA = c("-99", "-66", ".", "", "NA", NA),
     simlow = 600,
     simhigh = 601,
-    maxmatches = 2,
-    nsample = 5
+    maxmatches = 2691,
+    nsample = 500
     )
 
 # # merge in long format (1 row per match per person).

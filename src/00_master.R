@@ -4,7 +4,8 @@
 #
 ################################################################################
 
-### packages
+
+### PACKAGES ###
 # install.packages("R6")
 # install.packages("tidyverse")
 # install.packages("stringdist")
@@ -18,14 +19,16 @@ library(collections)
 library(stringi)
 library(feather)
 
-### definitions
+
+### PARAMETERS ###
 `%!in%` <- Negate(`%in%`)
 wd <- '/home/max/Seafile/Projects/matched-social-media-profile'
 setwd(wd)
 
-### run
 
-# sample data (use smaller subset to speed up matching)
+### RUN ###
+
+# original data (you can ignore parsing messages)
 df <- read_csv(paste0(wd, "/data/testdata_2022-09-12.csv"))
 
 # clean
