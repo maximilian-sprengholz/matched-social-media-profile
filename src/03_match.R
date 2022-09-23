@@ -34,7 +34,8 @@ Changes 2022-09-20:
 '
 
 ### PARAMETERS ###
-set.seed(42)
+#set.seed(42)
+options("scipen" = 20)
 source("src/02_matchparams.R")
 
 
@@ -87,7 +88,7 @@ matcher <- function(
 
             # dataframe containing all others with can be used in matching, shuffled
             df_p2 <- df_matchsubset %>%
-                filter(idcol != as.numeric(row_p1[idcol]) & matchable == 1)
+                filter(.data[[idcol]] != as.numeric(row_p1[idcol]) & matchable == 1)
             df_p2 <- df_p2[sample(nrow(df_p2)), ]
 
             # count toward maximum no of matches allowed per group
@@ -123,7 +124,7 @@ matcher <- function(
                         match_results <- pmap_dfr(
                             list(row_p1, row_p2, names(row_p2)),
                             function(p1, p2, matchvar) {
-                                # do not match on id
+                                # do not match on id, opinion, selector
                                 # check if cells contain something
                                 if (! matchvar %in% c(idcol, opinionvar, "matchable")
                                     && length(p1) == 1 && length(p2) == 1
@@ -165,7 +166,7 @@ matcher <- function(
                             nmatches[[opinion_matched]]$simhigh <<- nmatches[[opinion_matched]]$simhigh + 1
                             nconsidered_simhigh <<- nconsidered
                             save <- 1
-                        } else if (simscore > simlow & simscore < simhigh) {
+                        } else if (simscore > simlow & simscore < simhigh & any(nmatches[[opinion_matched]] < 1)) {
                             save <- 1
                         } else {
                             save <- 0
@@ -181,13 +182,11 @@ matcher <- function(
                                     names_glue = "{matchvar}_{.value}"
                                     )
                             # add person id (for merge), match id, match simscore
-                            # simscore low/high cutoffs
-                            # value on opinion essay of matched person
+                            # values on opinion essay of both persons (select before merge)
                             row_matched[idcol] <- row_p1[idcol]
+                            row_matched["essay_opinion_prior"] <- row_p1[opinionvar]
                             row_matched[paste0("match_", idcol)] <- row_p2[idcol]
                             row_matched["match_simscore"] <- simscore
-                            row_matched["match_simlow"] <- simlow
-                            row_matched["match_simhigh"] <- simhigh
                             row_matched["match_essay_opinion_prior"] <- row_p2[opinionvar]
                             # return
                             return(row_matched)
@@ -201,6 +200,9 @@ matcher <- function(
 
                 # add counts of considered persons to df
                 df_match_person <- df_match_person %>% 
+                    mutate(simlow = simlow) %>%
+                    mutate(simhigh = simhigh) %>%
+                    mutate(maxmatches = maxmatches) %>%
                     mutate(nconsidered_simlow = nconsidered_simlow) %>%
                     mutate(nconsidered_simhigh = nconsidered_simhigh)
 
@@ -361,72 +363,77 @@ df_matches <- matcher(
     nsample = 500
     )
 
-# # merge in long format (1 row per match per person).
-df <- merge(df, df_matches, by = "c_0116", all = TRUE)
-
 # save
-write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
-
+write_feather(df_matches, paste0(wd, "/data/post_match_preselection.feather"))
 
 ## SELECT MATCH ###############################################################
 
-'
- Select a match for each person based on 4 match_group options
+# '
+#  Select a match for each person based on 4 match_group options
 
- 4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
-     - same opinion & same characteristics (=highest simscore)
-     - same opinion & diff. characteristics (=lowest simscore)
-     - diff. opinion & same characteristics (=highest simscore)
-     - diff. opinion & diff. characteristics (=lowest simscore)
+#  4 options (polsim: essay_opinion_prior x nonpolsim: simscore):
+#      - same opinion & same characteristics (=highest simscore)
+#      - same opinion & diff. characteristics (=lowest simscore)
+#      - diff. opinion & same characteristics (=highest simscore)
+#      - diff. opinion & diff. characteristics (=lowest simscore)
 
- Selected match: match_profile_export = 1
-'
+#  Selected match: match_profile_export = 1
+# '
 
-# import matched data
-df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
+# # import matched data
+# df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
 
-# number of matches per person (= number of rows per c_0116)
-df %>% select(c(c_0116)) %>% group_by(c_0116) %>% count() %>% summarize(n)
+# # number of matches per person (= number of rows per c_0116)
+# df %>% select(c(c_0116)) %>% group_by(c_0116) %>% count() %>% summarize(n)
 
-# match group: opinion (same/diff) x simscore (high/low)
-df_opsame_simhigh <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
-    slice(which.max(match_simscore)) %>%
-    mutate(match_group = "Same opinion, same characteristics") %>%
-    select(c(c_0116, match_c_0116, match_group))
-df_opsame_simlow <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
-    slice(which.min(match_simscore)) %>%
-    mutate(match_group = "Same opinion, different characteristics") %>%
-    select(c(c_0116, match_c_0116, match_group))
-df_opdiff_simhigh <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
-    slice(which.max(match_simscore)) %>%
-    mutate(match_group = "Different opinion, same characteristics") %>%
-    select(c(c_0116, match_c_0116, match_group))
-df_opdiff_simlow <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
-    slice(which.min(match_simscore)) %>%
-    mutate(match_group = "Different opinion, different characteristics") %>%
-    select(c(c_0116, match_c_0116, match_group))
+# # match group: opinion (same/diff) x simscore (high/low)
+# df_opsame_simhigh <- df %>% group_by_at("c_0116") %>%
+#     filter(essay_opinion_prior == match_essay_opinion_prior) %>%
+#     slice(which.max(match_simscore)) %>%
+#     mutate(match_group = "Same opinion, same characteristics") %>%
+#     select(c(c_0116, match_c_0116, match_group))
+# df_opsame_simlow <- df %>% group_by_at("c_0116") %>%
+#     filter(essay_opinion_prior == match_essay_opinion_prior) %>%
+#     slice(which.min(match_simscore)) %>%
+#     mutate(match_group = "Same opinion, different characteristics") %>%
+#     select(c(c_0116, match_c_0116, match_group))
+# df_opdiff_simhigh <- df %>% group_by_at("c_0116") %>%
+#     filter(essay_opinion_prior != match_essay_opinion_prior) %>%
+#     slice(which.max(match_simscore)) %>%
+#     mutate(match_group = "Different opinion, same characteristics") %>%
+#     select(c(c_0116, match_c_0116, match_group))
+# df_opdiff_simlow <- df %>% group_by_at("c_0116") %>%
+#     filter(essay_opinion_prior != match_essay_opinion_prior) %>%
+#     slice(which.min(match_simscore)) %>%
+#     mutate(match_group = "Different opinion, different characteristics") %>%
+#     select(c(c_0116, match_c_0116, match_group))
 
-# merge match group
-df <- merge(
-    df, rbind(df_opsame_simhigh, df_opsame_simlow, df_opdiff_simhigh, df_opdiff_simlow), 
-    by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE
-    )
+# # merge match group
+# df <- merge(
+#     df, rbind(df_opsame_simhigh, df_opsame_simlow, df_opdiff_simhigh, df_opdiff_simlow), 
+#     by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE
+#     )
 
-# match_profile_export = random selection of match_group
-df_random_match <- df %>% 
-    group_by_at("c_0116") %>% 
-    filter(!is.na(match_group)) %>%
-    slice_sample(n = 1) %>%
-    select(c(c_0116, match_c_0116)) %>%
-    mutate(match_profile_export = 1)
-df <- merge(df, df_random_match, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE)
+# # match_profile_export = random selection of match_group
+# df_random_match <- df %>% 
+#     group_by_at("c_0116") %>% 
+#     filter(!is.na(match_group)) %>%
+#     slice_sample(n = 1) %>%
+#     select(c(c_0116, match_c_0116)) %>%
+#     mutate(match_profile_export = 1)
+# df <- merge(df, df_random_match, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE)
 
-# distribution of groups
-table(df %>% filter(match_profile_export == 1) %>% select(c(match_group)))
+# # distribution of groups
+# table(df %>% filter(match_profile_export == 1) %>% select(c(match_group)))
 
-# save (might be HUGE if match no. is not restricted!)
-write_feather(df, paste0(wd, "/data/post_match.feather"))
+
+# ### MERGE & SAVE ##############################################################
+
+# # import cleaned data
+# df_prematch <- read_feather(paste0(wd, "/data/pre_match.feather"))
+
+# # merge in long format (1 row per match per person).
+# df <- merge(df_prematch, df, by = "c_0116", all = TRUE)
+
+# # save (might be HUGE if match no. is not restricted!)
+# write_feather(df, paste0(wd, "/data/post_match.feather"))

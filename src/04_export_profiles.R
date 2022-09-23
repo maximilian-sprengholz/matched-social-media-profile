@@ -6,6 +6,7 @@
 
 ### PARAMETERS ###
 set.seed(42)
+options("scipen" = 20)
 source("src/02_matchparams.R")
 
 
