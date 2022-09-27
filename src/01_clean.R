@@ -337,7 +337,6 @@ df$otherpets <- clean_open_answers(df$otherpets_orig, replace_pattern, to_comma_
 ### TASTE ###
 
 # color
-df$color <- gsub("andere, und zwar:", "", df$color)
 
 # othercolor
 df <- rename(df, othercolor_orig = othercolor)
@@ -351,7 +350,6 @@ to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\
 df$othercolor <- clean_open_answers(df$othercolor_orig, replace_pattern, to_comma_pattern)
 
 # food
-df$food <- gsub("Anderes, und zwar:", "", df$food)
 
 # otherfood
 extract_pattern <- c(

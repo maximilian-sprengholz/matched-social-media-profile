@@ -35,7 +35,7 @@ setwd(wd)
 ### RUN ###
 
 # original data (you can ignore parsing messages)
-df <- read_csv(paste0(wd, "/data/testdata_2022-09-23.csv"))
+df <- read_csv(paste0(wd, "/data/Data_with_printing_rules_20220926.csv"))
 
 # clean
 source("src/01_clean.R")
