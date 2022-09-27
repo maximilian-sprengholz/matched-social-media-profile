@@ -431,7 +431,7 @@ df <- read_feather(paste0(wd, "/data/pre_match.feather"))
 
 # set-up multisession
 ncores <- detectCores()
-plan(multisession, workers = 10)
+plan(multisession, workers = ncores)
 
 # match
 tic()
