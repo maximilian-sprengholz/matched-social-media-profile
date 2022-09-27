@@ -29,7 +29,7 @@ setwd(wd)
 ### RUN ###
 
 # original data (you can ignore parsing messages)
-df <- read_csv(paste0(wd, "/data/testdata_2022-09-12.csv"))
+df <- read_csv(paste0(wd, "/data/testdata_2022-09-23.csv"))
 
 # clean
 source("src/01_clean.R")
@@ -37,5 +37,8 @@ source("src/01_clean.R")
 # match
 source("src/03_match.R")
 
+# select match
+source("src/04_select_match.R")
+
 # export profiles
-source("src/04_export_profiles.R")
+source("src/05_export_profiles.R")

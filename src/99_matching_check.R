@@ -81,7 +81,7 @@ check_matches <- function(
         "c_0116", matchvars, "match_c_0116", paste0(matchvars, "_matched"), paste0(matchvars, "_score")
         )
     cols <- cols[cols %in% colnames(df)]
-    df <- df %>% select(cols)
+    df <- df[cols]
     matchvars <- gsub("_matched", "", names(df %>% select(contains("_matched"))))
 
     # randomly select a match pair (person, match); display; ask to continue
@@ -94,7 +94,7 @@ check_matches <- function(
                 df_matchvar <- df %>% select(ends_with("c_0116") | starts_with(matchvar))
                 # randomly select p1 row, check if empty
                 row_p1 <- df_matchvar %>%
-                    filter(.data[[paste0(matchvar, "_matched")]] %in% matchdummyvalues)
+                    filter(!is.na(match_c_0116) & .data[[paste0(matchvar, "_matched")]] %in% matchdummyvalues)
                 if (nrow(row_p1) > 0) {
                     row_p1 <- row_p1 %>% slice_sample(n = 1)
                     # select match row
@@ -102,13 +102,11 @@ check_matches <- function(
                         filter(c_0116 %in% row_p1["match_c_0116"]) %>%
                         slice_sample(n = 1)
                     # display
-                    spaces_p1 <- replicate(5 - nchar(as.character(row_p1["c_0116"])), " ")
-                    spaces_p2 <- replicate(5 - nchar(as.character(row_p2["c_0116"])), " ")
-                    message(paste0("Matchvar:          ", matchvar))
-                    message(paste0("Value P1 (", row_p1["c_0116"], "):  ", spaces_p1, row_p1[matchvar]))
-                    message(paste0("Value P2 (", row_p2["c_0116"], "):  ", spaces_p2, row_p2[matchvar]))
-                    message(paste0("Matched:           ", row_p1[paste0(matchvar, "_matched")]))
-                    message(paste0("Score:             ", row_p1[paste0(matchvar, "_score")]))
+                    message(paste0("Matchvar:                    ", matchvar))
+                    message(paste0("Value P1 (", row_p1["c_0116"], "):  ", row_p1[matchvar]))
+                    message(paste0("Value P2 (", row_p2["c_0116"], "):  ", row_p2[matchvar]))
+                    message(paste0("Matched:                     ", row_p1[paste0(matchvar, "_matched")]))
+                    message(paste0("Score:                       ", row_p1[paste0(matchvar, "_score")]))
                     # user confirmation
                     userinput <- readline(
                         prompt = "[Enter] next match / ['n' + Enter] next variable / ['e' + Enter] exit : "
@@ -134,7 +132,7 @@ check_matches <- function(
 ### DATA ########################################################################
 
 # import matched data
-df <- read_feather(paste0(wd, "/data/post_export.feather"))
+df <- read_feather(paste0(wd, "/data/post_match.feather"))
 
 
 ### TEST 1 ########################################################################
@@ -146,33 +144,33 @@ The first set of tests should check if the worst/best matches in the data make s
 Please check the top-25 and bottom-25 of matches as shown below and note any peculiarities.
 '
 
-# high/low values
-summary(df$match_simscore)
-df_simhigh <- df %>%
-    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
-    arrange(desc(match_simscore)) %>%
-    slice_head(n = 25)
-print(df_simhigh)
-df_simlow <- df %>% 
-    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
-    arrange(match_simscore) %>%
-    slice_head(n = 25)
-print(df_simlow)
+# # high/low values
+# summary(df$match_simscore)
+# df_simhigh <- df %>%
+#     select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
+#     arrange(desc(match_simscore)) %>%
+#     slice_head(n = 25)
+# print(df_simhigh)
+# df_simlow <- df %>% 
+#     select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
+#     arrange(match_simscore) %>%
+#     slice_head(n = 25)
+# print(df_simlow)
 
-# subset (save memory)
-df_matchvars <- df %>% select(c("c_0116", "match_c_0116", get_matchvars(matchparams = matchparams)))
+# # subset (save memory)
+# df_matchvars <- df %>% select(c("c_0116", "match_c_0116", get_matchvars(matchparams = matchparams)))
 
-# check manually for high/low simscores and each match (= 1 row in the corresponding df)
-compare_by_id(
-    df = df_matchvars,
-    pid = as.numeric(df_simhigh[1, "c_0116"]),
-    matchid = as.numeric(df_simhigh[1, "match_c_0116"])
-    )
-compare_by_id(
-    df = df_matchvars,
-    pid = as.numeric(df_simlow[1, "c_0116"]),
-    matchid = as.numeric(df_simlow[1, "match_c_0116"])
-    )
+# # check manually for high/low simscores and each match (= 1 row in the corresponding df)
+# compare_by_id(
+#     df = df_matchvars,
+#     pid = as.numeric(df_simhigh[1, "c_0116"]),
+#     matchid = as.numeric(df_simhigh[1, "match_c_0116"])
+#     )
+# compare_by_id(
+#     df = df_matchvars,
+#     pid = as.numeric(df_simlow[1, "c_0116"]),
+#     matchid = as.numeric(df_simlow[1, "match_c_0116"])
+#     )
 
 
 ### TEST 2 ########################################################################
@@ -197,5 +195,5 @@ check_matches(
 check_matches(
     df = df,
     matchvars = get_matchvars(matchparams = matchparams, fuzzyonly = TRUE),
-    matchdummyvalues = c(1)
+    matchdummyvalues = c(0)
     )

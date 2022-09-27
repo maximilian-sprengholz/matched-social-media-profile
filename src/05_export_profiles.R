@@ -31,6 +31,9 @@ exporter <- function(
     - Output df: df with pids and profile urls for the matched and exported profile
     '
 
+    # keep track in terminal
+    message("\nExporter started.")
+
     # for each person and match, export match profile and add file name/url to df;
     # fetch info via match_id (match_c_0116), use only print strings and id info
     df_match_export <- df[
@@ -70,6 +73,8 @@ exporter <- function(
                 )
             return(df_profiles)
             })
+    message("Done.")
+    return(df_match_export)
     }
 
 export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, valuesNA) {
@@ -210,7 +215,8 @@ select_subset <- function(group, matchparams, item_set, df_row) {
 
     # sort by score, random order when scores are equal
     # select x best/worst matches from items (if there is room for selection)
-    if (df_row[1, "match_nonpolsim"] == 1) {
+    if (df_row[1, "match_group"] == "Different opinion, same characteristics"
+            | df_row[1, "match_group"] == "Same opinion, same characteristics") {
         # best -> decreasing
         df_item_set <- df_item_set[
             order(
@@ -231,7 +237,7 @@ select_subset <- function(group, matchparams, item_set, df_row) {
             ,
             ]
         }
-    if (nrow(df_item_set) >= printsubset$max) df_item_set <- df_item_set[1:printsubset$max,]
+    if (nrow(df_item_set) >= printsubset$max) df_item_set <- df_item_set[1:printsubset$max, ]
 
     # simscore sum of printed items (might differ from total simscore)
     simscore <- colSums(df_item_set["simscore"], na.rm = TRUE)
@@ -248,6 +254,7 @@ select_subset <- function(group, matchparams, item_set, df_row) {
     return(item_selection)
     }
 
+
 ### RUN ########################################################################
 '
 You need to provide an export_indicator=dummy indicating if a profile should be
@@ -255,7 +262,7 @@ exported for the match or not (in this case: match_profile_export).
 '
 
 # import matched data
-df <- read_feather(paste0(wd, "/data/post_match.feather"))
+df <- read_feather(paste0(wd, "/data/post_match_post_selection.feather"))
 
 # delete old files
 docs <- list.files(path = paste0(wd, "/profiles"), pattern = "*.html")
