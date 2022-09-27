@@ -42,14 +42,14 @@ source("src/02_matchparams.R")
 
 matcher <- function(
         df,
+        df_matchable, # subset who can be matches (convenience option to allow split of df)
         idcol, # person ids, numeric
         matchparams, # dict containing all matching parameters
         valuesNA, # vector of values that should not be matched
         simlow = 395, # similarity is low <= value
         simhigh = 653, # similarity is high >= value
         maxmatches = 35, # n matches allowed per group (opinion (same/diff) x similarity (low/high))
-        opinionvar = "essay_opinion_prior", # opinion dummy
-        nsample = NA # integer, set if you want to select a subset for which a match is searched 
+        opinionvar = "essay_opinion_prior"
         ) {
 
     # get matchvars and corresponding parameters (create new dict)
@@ -63,8 +63,11 @@ matcher <- function(
     matchvars <- unlist(matchvarparams$keys())
 
     # subset df to contain just matching vars, and persons for which matches should be found
-    df_matchsubset <- df[, c(idcol, opinionvar, "matchable", matchvars)]
-    if (!is.numeric(nsample)) nsample <- nrow(df_matchsubset)
+    df <- df[, c(idcol, opinionvar, matchvars)]
+    nsample <- nrow(df)
+
+    # subset df_matchable
+    df_matchable <- df_matchable[, c(idcol, opinionvar, matchvars)]
 
     # keep track in terminal
     message(paste0("\nMatcher started for n=", nsample, " Persons."))
@@ -74,7 +77,7 @@ matcher <- function(
         p <- progressor(steps = nsample)
 
         ### Step 1: Do for each row of a single person (p1)
-        df_match_all <- df_matchsubset %>%
+        df_match_all <- df %>%
             slice_sample(n = nsample) %>%
             future_pmap_dfr(function(...) {
 
@@ -82,8 +85,7 @@ matcher <- function(
                 row_p1 <- tibble(...)
 
                 # dataframe containing all others with can be used in matching, shuffled
-                df_p2 <- df_matchsubset %>%
-                    filter(.data[[idcol]] != as.numeric(row_p1[idcol]) & matchable == 1)
+                df_p2 <- df_matchable %>% filter(.data[[idcol]] != as.numeric(row_p1[idcol]))
                 df_p2 <- df_p2[sample(nrow(df_p2)), ]
 
                 # count toward maximum no of matches allowed per group
@@ -426,17 +428,24 @@ match_score <- function(matchvar, matchvarparams, common) {
 
 ### RUN ########################################################################
 
-# import cleaned data
-df <- read_feather(paste0(wd, "/data/pre_match.feather"))
+# matcher df input
+'
+The parameters df and df_matchable are separate inputs to allow for splitting df
+in chunks while keeping all the potential matching partners in df_matchable.
+'
+df <- read_feather(paste0(wd, "/data/pre_match.feather")) # cleaned data
+df_matchable <- df %>% filter(matchable == 1)
 
 # set-up multisession
 ncores <- detectCores()
 plan(multisession, workers = ncores)
 
+
 # match
 tic()
 df_matches <- matcher(
     df = df,
+    df_matchable = df_matchable,
     idcol = "c_0116",
     matchparams = matchparams,
     valuesNA = c("-99", "-66", ".", "", "NA", NA),
