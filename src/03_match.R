@@ -274,7 +274,9 @@ matcher <- function(
                     return(df_match_person)
 
                 },
-                .options = furrr_options(seed = TRUE) # ensure reproducible number generation (RNG)
+                # ensure reproducible number generation (RNG)
+                # make scheduling dynamic
+                .options = furrr_options(seed = TRUE, scheduling = 10L)
             )
         })
 
@@ -429,7 +431,7 @@ df <- read_feather(paste0(wd, "/data/pre_match.feather"))
 
 # set-up multisession
 ncores <- detectCores()
-plan(multisession, workers = ncores)
+plan(multisession, workers = 10)
 
 # match
 tic()
