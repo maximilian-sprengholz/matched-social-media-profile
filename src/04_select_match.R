@@ -24,7 +24,6 @@ very high simscores for potential duplicates).
 
 ### PARAMETERS ###
 set.seed(42)
-options("scipen" = 99)
 source("src/02_matchparams.R")
 
 
@@ -86,7 +85,8 @@ compare_by_id <- function(df, matchvars = c(), pid, matchid) {
 df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
 
 # check number of matches per person against maxmatches (=35)
-print(df %>% group_by_at(c("c_0116", "match_group")) %>% count(), n = 200)
+print(df %>% filter(!is.na(match_group)) %>%
+    group_by_at(c("c_0116", "match_group")) %>% count(), n = 200)
 
 # high/low values
 summary(df$match_simscore)

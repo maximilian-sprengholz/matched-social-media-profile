@@ -12,12 +12,18 @@
 # install.packages("collections")
 # install.packages("stringi")
 # install.packages("feather")
+# install.packages("tictoc")
+# install.packages("furrr")
 library(R6)
 library(tidyverse)
 library(stringdist)
 library(collections)
 library(stringi)
 library(feather)
+library(tictoc)
+library(furrr)
+library(progressr)
+library(parallel)
 
 
 ### PARAMETERS ###
