@@ -6,7 +6,7 @@
 
 ### PARAMETERS ###
 set.seed(42)
-options("scipen" = 20)
+options(scipen = 99)
 source("src/02_matchparams.R")
 
 
@@ -16,7 +16,6 @@ exporter <- function(
         df,
         idcol, # person ids, numeric
         matchparams, # dict containing all matching parameters
-        export_indicator, # dummy indicating which observations to be exported
         path_dir,
         valuesNA
         ) {
@@ -32,48 +31,54 @@ exporter <- function(
     '
 
     # keep track in terminal
-    message("\nExporter started.")
+    nsample <- nrow(df)
+    message(paste0("\nExporter started for n=", nsample, " Profiles."))
 
-    # for each person and match, export match profile and add file name/url to df;
-    # fetch info via match_id (match_c_0116), use only print strings and id info
-    df_match_export <- df[
-        df[export_indicator] == 1 & !is.na(df[export_indicator])
-        ,
-        ] # those to be exported
-    df_match_export <- df_match_export %>%
-        pmap_df(function(...) {
-            # person for which we export a matched profile
-            df_row <- tibble(...)
-            # person matched
-            match_id <- as.numeric(df_row[1, paste0("match_", idcol)])
-            df_match_row <- df[df[idcol] == match_id, ]
-            df_match_row <- df_match_row[1, ]
-            # file path
-            path_file <- paste0(path_dir, df_row[1, idcol], ".html")
-            # export profile; save sum of simscores of printed items
-            profile_simscore <- export_values(
-                df_row,
-                df_match_row,
-                idcol,
-                path_file,
-                matchparams,
-                valuesNA)
-            # return profile and merge info
-            df_profiles <- data.frame(
-                df_row[1, idcol],
-                match_id,
-                path_file,
-                profile_simscore
+    with_progress({
+
+        # track progress
+        p <- progressor(steps = nsample)
+
+        # for each person and match, export match profile and add file name/url to df;
+        # fetch info via match_id (match_c_0116), use only print strings and id info
+        df_match_export <- df %>%
+            future_pmap_dfr(function(...) {
+                # person for which we export a matched profile
+                df_row <- tibble(...)
+                # person matched
+                match_id <- as.numeric(df_row[1, paste0("match_", idcol)])
+                df_match_row <- df[df[idcol] == match_id, ]
+                df_match_row <- df_match_row[1, ]
+                # file path
+                path_file <- paste0(path_dir, df_row[1, idcol], ".html")
+                # export profile; save sum of simscores of printed items
+                profile_simscore <- export_values(
+                    df_row,
+                    df_match_row,
+                    idcol,
+                    path_file,
+                    matchparams,
+                    valuesNA)
+                # return profile and merge info
+                df_profiles <- data.frame(
+                    df_row[1, idcol],
+                    match_id,
+                    path_file,
+                    profile_simscore
+                    )
+                colnames(df_profiles) <- c(
+                    idcol,
+                    paste0("match_", idcol),
+                    "match_profile_url",
+                    "match_profile_simscore"
+                    )
+                # update progress and return
+                p()
+                return(df_profiles)
+                },
+                .options = furrr_options(seed = TRUE)
                 )
-            colnames(df_profiles) <- c(
-                idcol,
-                paste0("match_", idcol),
-                "match_profile_url",
-                "match_profile_simscore"
-                )
-            return(df_profiles)
-            })
-    message("Done.")
+        })
     return(df_match_export)
     }
 
@@ -256,36 +261,41 @@ select_subset <- function(group, matchparams, item_set, df_row) {
 
 
 ### RUN ########################################################################
-'
-You need to provide an export_indicator=dummy indicating if a profile should be
-exported for the match or not (in this case: match_profile_export).
-'
-
-# import matched data
-df <- read_feather(paste0(wd, "/data/post_match_post_selection.feather"))
 
 # delete old files
 docs <- list.files(path = paste0(wd, "/profiles"), pattern = "*.html")
-if (length(docs) > 0) file.remove(paste0(wd, "/profiles/", docs))
+if (length(docs) > 0) {
+    invisible(file.remove(paste0(wd, "/profiles/", docs)))
+    print(paste0("Cleaning up before export: ", length(docs), " profiles removed."))
+    }
+    
+# import matched data
+df <- read_feather(paste0(wd, "/data/post_match.feather"))
+df_exportable <- df %>% filter(match_profile_export == 1) # those to be exported
+
+# set-up multisession
+ncores <- detectCores()
+plan(multisession, workers = ncores)
 
 # export
+tic()
 profiles <- exporter(
-    df = df,
+    df = df_exportable,
     idcol = "c_0116",
     matchparams = matchparams,
-    export_indicator = "match_profile_export",
     path_dir = paste0(wd, "/profiles/"), # where to store the profiles
     valuesNA = c("-99", "-66", ".", "", "NA", NA) # print string values not to export
     )
+toc()
 
 # merge back to df
 df <- merge(df, profiles, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE)
 
-# save (might be HUGE if match no. is not restricted!)
+# save
 write_feather(df, paste0(wd, "/data/post_export.feather"))
 
 ### export match correspondence table
-df_matches <- df %>%
+df_matches <- df_exportable %>%
     filter(match_profile_export == 1) %>%
     select(c(c_0116, match_c_0116, match_profile_url)) %>%
     mutate(match_profile_url = gsub(wd, "", match_profile_url))

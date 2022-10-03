@@ -35,6 +35,7 @@ Changes 2022-09-20:
 
 ### PARAMETERS ###
 set.seed(42)
+options(scipen = 99)
 source("src/02_matchparams.R")
 
 
@@ -433,13 +434,12 @@ match_score <- function(matchvar, matchvarparams, common) {
 The parameters df and df_matchable are separate inputs to allow for splitting df
 in chunks while keeping all the potential matching partners in df_matchable.
 '
-df <- read_feather(paste0(wd, "/data/pre_match.feather")) # cleaned data
+df <- read_feather(paste0(wd, "/data/pre_match.feather")) # cleaned pre-match data
 df_matchable <- df %>% filter(matchable == 1)
 
 # set-up multisession
 ncores <- detectCores()
 plan(multisession, workers = ncores)
-
 
 # match
 tic()
@@ -455,11 +455,5 @@ df_matches <- matcher(
     )
 toc()
 
-# save (precaution)
-write_feather(df_matches, paste0(wd, "/data/post_match_preselection0.feather"))
-
-# merge in long format (1 row per match per person).
-df <- merge(df, df_matches, by = "c_0116", all.x = TRUE, all.y = FALSE)
-
-# save
-write_feather(df, paste0(wd, "/data/post_match_preselection.feather"))
+# save before match-selection (allow manual intervention if necessary)
+write_feather(df_matches, paste0(wd, "/data/matches.feather"))
