@@ -1,6 +1,6 @@
 /data/*.feather
-#/data/*.csv
-#!/data/match_id_correspondence.csv
+/data/*.csv
+!/data/match_id_correspondence.csv
 /env
 src/.Rhistory
 .Rhistory
