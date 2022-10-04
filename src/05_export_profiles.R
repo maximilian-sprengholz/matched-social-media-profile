@@ -9,7 +9,6 @@ set.seed(42)
 options(scipen = 99)
 source("src/02_matchparams.R")
 
-
 ### FUNCTIONS ###
 
 exporter <- function(
@@ -295,7 +294,7 @@ df <- merge(df, profiles, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y 
 write_feather(df, paste0(wd, "/data/post_export.feather"))
 
 ### export match correspondence table
-df_matches <- df_exportable %>%
+df_matches <- df %>%
     filter(match_profile_export == 1) %>%
     select(c(c_0116, match_c_0116, match_profile_url)) %>%
     mutate(match_profile_url = gsub(wd, "", match_profile_url))

@@ -43,14 +43,14 @@ df_random_match <- df_matches %>%
     group_by(c_0116) %>%
     slice_sample(n = 1) %>%
     mutate(match_profile_export = 1) %>%
-    select(., -matches("essay_opinion_prior")) %>%
+    select(., -matches("^essay_opinion_prior$")) %>%
     data.frame()
 
 # distribution of groups (should be uniformly distributed)
 table(df_random_match %>% filter(match_profile_export == 1) %>% select(c(match_group)))
 
 # merge info
-df <- merge(df, df_random_match, by = "c_0116")
+df <- merge(df, df_random_match, by = "c_0116", all = TRUE)
 
 # save
 write_feather(df, paste0(wd, "/data/post_match.feather"))
