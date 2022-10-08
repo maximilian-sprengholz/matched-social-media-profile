@@ -9,6 +9,7 @@ set.seed(42)
 options(scipen = 99)
 source("src/02_matchparams.R")
 
+
 ### FUNCTIONS ###
 
 exporter <- function(
@@ -50,20 +51,20 @@ exporter <- function(
                 df_match_row <- df_match_row[1, ]
                 # file path
                 path_file <- paste0(path_dir, df_row[1, idcol], ".html")
-                # export profile; save sum of simscores of printed items
-                profile_simscore <- export_values(
+                # export profile; returns printed items and their simscore sum
+                profile <- export_values(
                     df_row,
                     df_match_row,
                     idcol,
                     path_file,
                     matchparams,
                     valuesNA)
-                # return profile and merge info
+                # create profile df
                 df_profiles <- data.frame(
                     df_row[1, idcol],
                     match_id,
                     path_file,
-                    profile_simscore
+                    profile$simscore
                     )
                 colnames(df_profiles) <- c(
                     idcol,
@@ -71,6 +72,16 @@ exporter <- function(
                     "match_profile_url",
                     "match_profile_simscore"
                     )
+                # add info which items have been printed
+                for (group in unlist(matchparams$keys())) {
+                    printsubset <- matchparams$get(group)$get("printsubset")
+                    for (item in names(printsubset$map)) {
+                            df_profiles[paste0("match_profile_", item)] <- ifelse(
+                                item %in% profile$items,
+                                1,
+                                0)
+                        }
+                    }
                 # update progress and return
                 p()
                 return(df_profiles)
@@ -94,6 +105,9 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
     df_match_row <- df_match_row[colSums(!is.na(df_match_row)) > 0]
     df_match_row <- df_match_row[, which(!(df_match_row[1, ] %in% valuesNA))]
 
+    # gather profile items and scores
+    profile <- list(items = c(), simscore = 0) # gather printed items and scores
+
     ### gather header content
     content_header <- ""
     # initials (random char if empty)
@@ -104,6 +118,10 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
             df_match_row["header1"],
             sample(LETTERS, 1)),
         ".</h1>")
+    # add score
+    if ("initials_score" %in% colnames(df_row)) {
+        profile$simscore <- profile$simscore + df_row[1, "initials_score"]
+        }
     # other header info
     content_header <- paste(
         content_header,
@@ -114,12 +132,17 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
         "</p>",
         sep = "\n"
         )
+    # add score
+    for (matchvar in c("gender", "age", "agegroup", "currentstate")) {
+        if (paste0(matchvar, "_score") %in% colnames(df_row)) {
+            profile$simscore <- profile$simscore + df_row[1, paste0(matchvar, "_score")]
+            }
+        }
 
     ### gather main content (exclude what is in header)
 
     # for keys { for keys not in header_set {PRINT}}
     content_main <- list() # gather group content in list, collapse later
-    profile_simscore <- 0
     for (group in unlist(matchparams$keys())) {
         # get all print strings (e.g. demography1, 2, ...); check if not empty
         item_set <- sort(colnames(df_match_row)[
@@ -129,7 +152,8 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
             # randomly select print subset; sum up corresponding simscore (returned)
             item_selection <- select_subset(group, matchparams, item_set, df_row)
             item_set <- item_selection$items
-            profile_simscore <- profile_simscore + item_selection$simscore
+            profile$items <- c(profile$items, item_set)
+            profile$simscore <- profile$simscore + item_selection$simscore
             # container start
             content_main[group] <- paste0(
                 '<div id="',
@@ -167,8 +191,8 @@ export_values <- function(df_row, df_match_row, idcol, path_file, matchparams, v
     content <- gsub("--MAIN--", content_main, content)
     stri_write_lines(content, path_file)
 
-    # return simscore sum of all printed items
-    return(profile_simscore)
+    # return printed items and their simscore sum
+    return(profile)
 }
 
 select_subset <- function(group, matchparams, item_set, df_row) {
@@ -267,7 +291,7 @@ if (length(docs) > 0) {
     invisible(file.remove(paste0(wd, "/profiles/", docs)))
     print(paste0("Cleaning up before export: ", length(docs), " profiles removed."))
     }
-    
+
 # import matched data
 df <- read_feather(paste0(wd, "/data/post_match.feather"))
 df_exportable <- df %>% filter(match_profile_export == 1) # those to be exported
@@ -290,12 +314,16 @@ toc()
 # merge back to df
 df <- merge(df, profiles, by = c("c_0116", "match_c_0116"), all.x = TRUE, all.y = FALSE)
 
-# save
-write_feather(df, paste0(wd, "/data/post_export.feather"))
-
 ### export match correspondence table
 df_matches <- df %>%
     filter(match_profile_export == 1) %>%
     select(c(c_0116, match_c_0116, match_profile_url)) %>%
     mutate(match_profile_url = gsub(wd, "", match_profile_url))
 write.csv(df_matches, paste0(wd, "/data/match_id_correspondence.csv"), row.names = FALSE)
+
+# save
+write_feather(df, paste0(wd, "/data/post_export.feather"))
+colnames(df) <- sapply(colnames(df), function(str) {
+    strtrim(str, 32)
+    })
+write_dta(df %>% replace(is.na(.), "."), paste0(wd, "/data/post_export.dta"))

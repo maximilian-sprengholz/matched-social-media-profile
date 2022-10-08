@@ -457,3 +457,5 @@ toc()
 
 # save before match-selection (allow manual intervention if necessary)
 write_feather(df_matches, paste0(wd, "/data/matches.feather"))
+colnames(df_matches) <- sapply(colnames(df_matches), function(str) { strtrim(str, 32) })
+write_dta(df_matches, paste0(wd, "/data/matches.dta"))

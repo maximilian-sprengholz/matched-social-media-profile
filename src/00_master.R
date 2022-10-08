@@ -14,6 +14,7 @@
 # install.packages("feather")
 # install.packages("tictoc")
 # install.packages("furrr")
+# install.packages("haven")
 library(R6)
 library(tidyverse)
 library(stringdist)
@@ -24,6 +25,7 @@ library(tictoc)
 library(furrr)
 library(progressr)
 library(parallel)
+library(haven)
 
 
 ### PARAMETERS ###
