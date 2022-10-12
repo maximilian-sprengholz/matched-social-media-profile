@@ -130,13 +130,13 @@ replace othereyes = "" if v_882_print == "-99"
 
 cap drop eyes_help 
 gen str eyes_help = eyes
-replace eyes_help = othereyes if v_882_print != " "
+replace eyes_help = othereyes if v_882_print != "-99"
 
 cap drop demography1
 gen str demography1 = ""
 replace demography1 = "Meine Augenfarbe ist" + " " +  eyes_help + "." 
 replace demography1 = "" if eyes_help == "" 
-
+ 
 
 
 * demography2
@@ -148,6 +148,7 @@ decode v_693, gen(righthanded_help)
 replace righthanded_help = "Linkshänderin" if righthanded_help == "Linkshänder" & v_16 == 1
 replace righthanded_help = "Rechtshänderin" if righthanded_help == "Rechtshänder" & v_16 == 1
 replace righthanded_help = "beidhändig" if righthanded_help == "Beidhändig" & v_16 == 1
+replace righthanded_help = "beidhändig" if righthanded_help == "Beidhändig"
 
 cap drop demography2
 gen str demography2 = ""
@@ -191,10 +192,15 @@ replace otherlanguage  = v_695_print
 replace otherlanguage  = ustrtitle(otherlanguage)
 replace otherlanguage = "ansonsten keine andere Fremdsprache" if v_695_print == " " | v_695_print == "" | v_695_print == "-99"
 
+cap drop otherlanguage_help  
+gen str otherlanguage_help  = ""
+replace otherlanguage_help  = v_695_print
+replace otherlanguage_help = "ansonsten keine andere Fremdsprache" if v_695_print == " " | v_695_print == "" | v_695_print == "-99"
+
 cap drop demography5
 gen str demography5 = ""
-replace demography5 = "Neben meiner Muttersprache spreche ich" + " " + otherlanguage  + "."
-replace demography5 = "" if otherlanguage  == ""
+replace demography5 = "Neben meiner Muttersprache spreche ich" + " " + otherlanguage_help  + "."
+replace demography5 = "" if otherlanguage_help  == ""
 
 
 
@@ -268,7 +274,7 @@ replace grownup_ger  = "Ja" if v_697 == 1
 
 cap drop print_grownup_ger 
 gen str print_grownup_ger  = ""
-replace print_grownup_ger  = ustrtitle(v_699_print)
+replace print_grownup_ger  = v_699_print
 replace print_grownup_ger  = "Deutschland" if v_697 == 1
 
 cap drop location3
@@ -322,13 +328,13 @@ replace location6 = "" if secondgencountry  == "-66"
 
 
 * location7
-cap drop homestate
-decode v_698, gen(homestate)
+cap drop homestate_county
+decode v_698, gen(homestate_county)
 
 cap drop samestate
 gen str samestate = ""
-replace samestate = "Ja" if homestate == currentstate
-replace samestate = "Nein" if homestate!= currentstate & !mi(homestate) & !mi(currentstate)
+replace samestate = "Ja" if homestate_county == currentstate
+replace samestate = "Nein" if homestate_county != currentstate & !mi(homestate_county) & !mi(currentstate)
 
 cap drop location7
 gen str location7 = ""
@@ -409,6 +415,7 @@ cap drop family3
 gen str family3 = ""
 replace family3 = "Ich habe" + " " + children + "."
 replace family3 = "" if v_144_merged == .
+replace family3 = "Ich habe keine eigenen Kinder." if family3 == "Ich habe keine eigene Kinder."
 
 
 
@@ -451,12 +458,13 @@ replace family4 = "Ich habe" + " " + siblings
 
 
 * family5
-cap drop pets 
 cap drop pets_help
-egen pets_help = anymatch(v_713-v_890), values(1)
-gen str pets = ""
-replace pets = "die folgenden Haustiere:" if pets_help == 1
-replace pets = "keine Haustiere." if pets_help != 1
+cap drop pets_help
+egen pets_help = anymatch(v_714-v_890), values(1)
+cap drop pets_overall
+gen str pets_overall = ""
+replace pets_overall = "die folgenden Haustiere:" if pets_help == 1
+replace pets_overall = "keine Haustiere." if pets_help != 1
 
 foreach pet in "Katze" "Hund" "Fische" "Reptilien" "Vögel" "Nagetiere" {
 	cap drop pet_`pet'
@@ -466,12 +474,12 @@ foreach pet in "Katze" "Hund" "Fische" "Reptilien" "Vögel" "Nagetiere" {
 cap drop pet_Andere
 gen str pet_Andere = ""
 
-replace pet_Katze = "Katze; " if v_713 == 1
-replace pet_Hund = "Hund; " if v_714 == 1
-replace pet_Fische = "Fische; " if v_715 == 1
-replace pet_Reptilien = "Reptilien; " if v_716 == 1
-replace pet_Vögel = "Vögel; " if v_717 == 1
-replace pet_Nagetiere = "Nagetiere; " if v_718 == 1
+replace pet_Katze = "Katze; " if v_714 == 1
+replace pet_Hund = "Hund; " if v_715 == 1
+replace pet_Fische = "Fische; " if v_716 == 1
+replace pet_Reptilien = "Reptilien; " if v_717 == 1
+replace pet_Vögel = "Vögel; " if v_718 == 1
+replace pet_Nagetiere = "Nagetiere; " if v_719 == 1
 replace pet_Andere = v_891_print if v_890 == 1
 
 cap drop pets
@@ -485,10 +493,10 @@ replace otherpets = subinstr(otherpets, ";", ",",.)
 
 cap drop family5
 gen str family5 = ""
-replace family5 = "Ich habe" + " " + " " + pet_Katze + pet_Hund + pet_Fische + pet_Reptilien + pet_Vögel + pet_Nagetiere + pet_Andere
+replace family5 = "Ich habe" + " " + pets_overall + " " + pet_Katze + pet_Hund + pet_Fische + pet_Reptilien + pet_Vögel + pet_Nagetiere + pet_Andere
 replace family5 = substr(family5, 1, length(family5) - 1) if substr(family5, -1, 1) ==  " "
 replace family5 = substr(family5, 1, length(family5) - 1) if substr(family5, -1, 1) ==  ";"
-
+replace family5 = "Ich habe keine Haustiere." if pet_Andere == " "
 
 
 
@@ -503,16 +511,17 @@ replace education  = "Mein höchster beruflicher Schulabschluss ist ein Hochschu
 replace education  = "Mein höchster beruflicher Schulabschluss ist" + " " + v_725_print + "." if v_724 == 6
 replace education  = "Ich habe bislang keinen beruflichen Schulabschluss." if v_724 == 7
 
+cap drop family6
+gen str family6 = ""
+replace family6 = education
+
+
+
+* family6b (No print)
 cap drop college 
 gen str college  = ""
 replace college  = "Studiert habe ich hier:" + " " + v_726_print
 replace college  = " " if v_726_print == " " | v_726_print == "NA" | v_726_print == "-66"
-
-cap drop family6
-gen str family6 = ""
-replace family6 = education + " " + college
-
-
 
 
 
@@ -543,7 +552,7 @@ replace family7 = military  + " " + militarybranch
 * family8
 cap drop caregiver 
 gen str caregiver  = ""
-replace caregiver  = "Pflegetätigkeit" if v_728 == 1
+replace caregiver  = "eine Pflegetätigkeit" if v_728 == 1
 replace caregiver  = "keine Pflegetätigkeit" if v_728 == 2
 
 cap drop family8
@@ -579,6 +588,8 @@ cap drop family10
 gen str family10 = ""
 replace family10 = gayfriends 
 replace family10 = "" if v_727 == 3
+
+
 
 
 
@@ -983,6 +994,7 @@ decode v_756, gen(str_v_756)
 cap drop color 
 gen str color = ""
 replace color = lower(str_v_756)
+replace color = "" if v_756 == 12
 
 cap drop othercolor 
 gen str othercolor = ""
@@ -996,6 +1008,7 @@ replace color_help = othercolor if v_756 == 12
 cap drop taste0
 gen str taste0 = ""
 replace taste0 = "Meine Lieblingsfarbe ist:" + " " + color_help + "." 
+replace taste0 = "" if v_893_new == "NA" 
 
 
 
@@ -1004,6 +1017,7 @@ cap drop str_v_758
 decode v_758, gen(str_v_758)
 gen str food  = ""
 replace food  = str_v_758
+replace food = "" if v_758 == 16
 
 cap drop otherfood 
 gen str otherfood  = ""
@@ -1074,9 +1088,14 @@ gen str vacation  = ""
 replace vacation  = v_763_print
 replace vacation  = ustrtitle(vacation)
 
+cap drop vacation_help
+gen str vacation_help  = ""
+replace vacation_help  = v_763_print
+
+
 cap drop taste5
 gen str taste5 = ""
-replace taste5 = "Mein absolutes Traumland für eine Reise wäre:" + " " + vacation
+replace taste5 = "Mein absolutes Traumreiseziel für eine Reise wäre:" + " " + vacation_help
 replace taste5 = "" if vacation == " " 
 
 
@@ -1148,10 +1167,10 @@ replace thingsyoudo2 = help_smoke
 
 
 * thingsyoudo3
-cap drop sportdo 
-gen str sportdo  = ""
-replace sportdo  = "auch selbst aktiv Sport. Momentan vor allem:" if v_792 == 0
-replace sportdo  = "selbst aktiv keinen Sport." if v_792 == 1
+cap drop help_sportdo
+gen str help_sportdo  = ""
+replace help_sportdo  = "auch selbst aktiv Sport. Momentan vor allem:" if v_792 == 0
+replace help_sportdo  = "selbst aktiv keinen Sport." if v_792 == 1
 
 
 foreach sport in "Fußball" "Baseball" "Basketball" "Volleyball" "Tennis" "Eishockey" "Cricket" "Football" "Feldhockey" "Radfahren" "Leichtathletik" "Tischtennis" "Laufen" "Kampfsport" "Klettern" "Skifahren" "Yoga" "Schwimmen" "Angeln" "Sonstiges" {
@@ -1193,10 +1212,11 @@ gen str othersportdo  = v_897_print if v_896 == 1
 
 cap drop thingsyoudo3
 gen str thingsyoudo3 = ""
-replace thingsyoudo3 = "Ich treibe" + " " + sportdo  + " " + sport_Fußball + sport_Baseball + sport_Basketball + sport_Volleyball + sport_Tennis + sport_Eishockey + sport_Cricket + sport_Football + sport_Feldhockey + sport_Radfahren + sport_Leichtathletik + sport_Tischtennis + sport_Laufen + sport_Kampfsport + sport_Klettern + sport_Skifahren + sport_Yoga + sport_Schwimmen + sport_Angeln + sport_Andere
+replace thingsyoudo3 = "Ich treibe" + " " + help_sportdo  + " " + sport_Fußball + sport_Baseball + sport_Basketball + sport_Volleyball + sport_Tennis + sport_Eishockey + sport_Cricket + sport_Football + sport_Feldhockey + sport_Radfahren + sport_Leichtathletik + sport_Tischtennis + sport_Laufen + sport_Kampfsport + sport_Klettern + sport_Skifahren + sport_Yoga + sport_Schwimmen + sport_Angeln + sport_Andere
 replace thingsyoudo3 = substr(thingsyoudo3, 1, length(thingsyoudo3) - 1) if substr(thingsyoudo3, -1, 1) ==  " "
 replace thingsyoudo3 = substr(thingsyoudo3, 1, length(thingsyoudo3) - 1) if substr(thingsyoudo3, -1, 1) ==  ";"
-
+replace thingsyoudo3 = "Ich treibe selbst aktiv keinen Sport." if v_897_print == " "
+replace thingsyoudo3 = "Ich treibe selbst aktiv keinen Sport." if v_897_print == "."
 
 
 
@@ -1286,7 +1306,7 @@ gen str othermusic   = v_900_print if v_899 == 1
 
 cap drop thingsilike1
 gen str thingsilike1 = ""
-replace thingsilike1 = musiclisten  + " " + musik_Blues + musik_Klassik + musik_Country + musik_Rock + musik_HipHop + musik_Latin + musik_Pop + musik_Religiös + musik_Funk + musik_R_B + musik_Rap + musik_Elektronisch + musik_Folk + musik_Jazz + musik_New_Age + musik_Reggae
+replace thingsilike1 = musiclisten  + " " + musik_Blues + musik_Klassik + musik_Country + musik_Rock + musik_HipHop + musik_Latin + musik_Pop + musik_Religiös + musik_Funk + musik_R_B + musik_Rap + musik_Elektronisch + musik_Folk + musik_Jazz + musik_New_Age + musik_Reggae + musik_Andere
 replace thingsilike1 = substr(thingsilike1, 1, length(thingsilike1) - 1) if substr(thingsilike1, -1, 1) ==  " "
 replace thingsilike1 = substr(thingsilike1, 1, length(thingsilike1) - 1) if substr(thingsilike1, -1, 1) ==  ";"
 
@@ -1361,7 +1381,7 @@ replace othermovie = v_903_print if v_903_print == ""
 
 cap drop thingsilike3
 gen str thingsilike3 = ""
-replace thingsilike3 = moviefan  + " " + filme_Action + filme_Abenteuer + filme_Komödie + filme_Krimi + filme_Drama + filme_Fantasy + filme_Historisch + filme_Horror + filme_Mystery + filme_Politisch + filme_Romantik + filme_SciFi + filme_Thriller + filme_Krieg + filme_Western + filme_Surreal
+replace thingsilike3 = moviefan  + " " + filme_Action + filme_Abenteuer + filme_Komödie + filme_Krimi + filme_Drama + filme_Fantasy + filme_Historisch + filme_Horror + filme_Mystery + filme_Politisch + filme_Romantik + filme_SciFi + filme_Thriller + filme_Krieg + filme_Western + filme_Surreal + filme_Andere
 replace thingsilike3 = substr(thingsilike3, 1, length(thingsilike3) - 1) if substr(thingsilike3, -1, 1) ==  " "
 replace thingsilike3 = substr(thingsilike3, 1, length(thingsilike3) - 1) if substr(thingsilike3, -1, 1) ==  ";"
 
@@ -1393,6 +1413,7 @@ gen str thingsilike5 = ""
 replace thingsilike5 = "Am liebsten sehe ich Filme mit" + " " + bestactor + "."
 replace thingsilike5 = "" if bestactor == " "
 replace thingsilike5 = "" if bestactor == ""
+replace thingsilike5 = "" if bestactor == "Peterarnold.marquardt1@gmail.com"
 
 
 
@@ -1462,8 +1483,7 @@ gen str thingsilike7 = ""
 replace thingsilike7 = "Ich bin großer Fan von" + " " + bestteam  + "."
 replace thingsilike7 = "" if bestteam  == "-66"
 replace thingsilike7 = "" if bestteam  == " "
-
-
+replace thingsilike7 = "" if bestteam  == "Leck mich am Arch"
 
 
 
@@ -1523,7 +1543,6 @@ replace thingsilike11 = books
 
 
 
-
 * thingsilike12
 cap drop followwebchannels 
 gen str followwebchannels  = ""
@@ -1556,7 +1575,7 @@ replace thingsilike13 = webchannels
 cap drop playvideogames  
 gen str playvideogames   = ""
 replace playvideogames   = "Ab und zu spiele ich auch ganz gerne Videospiele." if v_871 == 1 
-replace playvideogames   = "Videospiele und solchen Sachen sind nichts für mich." if v_871 == 2
+replace playvideogames   = "Videospiele und solche Sachen sind nichts für mich." if v_871 == 2
 
 cap drop thingsilike14
 gen str thingsilike14 = ""
@@ -1634,6 +1653,7 @@ destring currentzip, replace
 cap drop homezip_ger
 clonevar homezip_ger = v_701
 replace homezip_ger = . if homezip_ger == -99
+replace homezip_ger = . if v_697 == 2
 
 
 * hometown_ger
@@ -1641,6 +1661,8 @@ cap drop hometown_ger
 clonevar hometown_ger = v_700
 replace hometown_ger = ustrtitle(hometown_ger)
 replace hometown_ger = "" if v_697 == 2
+replace hometown_ger = "" if hometown_ger == "-"
+replace hometown_ger = "" if hometown_ger == "-99"
 
 
 * hometown_foreign
@@ -1665,18 +1687,19 @@ replace samezip = "Nein" if currentzip != homezip_ger & !mi(currentzip) & !mi(ho
 * income
 cap drop income
 clonevar income = v_154_merged 
+replace income =round(income,100)
 
 
 
-* incomebrackets
-cap drop incomebrackets
-clonevar incomebrackets = v_156_merged 
-replace incomebrackets = 1 if income < 1000
-replace incomebrackets = 2 if income >= 1000 & income < 2000
-replace incomebrackets = 3 if income >= 2000 & income < 3000
-replace incomebrackets = 4 if income >= 3000 & income < 4000
-replace incomebrackets = 5 if income >= 4000 & income < 5000
-replace incomebrackets = 6 if income >= 5000 & !mi(income)
+* incomebracket
+cap drop incomebracket
+clonevar incomebracket = v_156_merged 
+replace incomebracket = 1 if income < 1000
+replace incomebracket = 2 if income >= 1000 & income < 2000
+replace incomebracket = 3 if income >= 2000 & income < 3000
+replace incomebracket = 4 if income >= 3000 & income < 4000
+replace incomebracket = 5 if income >= 4000 & income < 5000
+replace incomebracket = 6 if income >= 5000 & !mi(income)
 
 
 * ---------------------------------------------------------------------------- *
@@ -1714,8 +1737,25 @@ label val  essay_opinion_prior essay_opinion_prior
 * ---------------------------------------------------------------------------- *
 * ---------------------------------------------------------------------------- *
 
+
+
 foreach var of varlist header* demography* location* family* finance* personality* behavior* taste* thingsyoudo* thingsilike* quirk* {
 	replace `var' = "" if useable != "1 Yes"
 }
 
-save "$data/Data_with_printing_rules_20220907", replace
+
+
+
+
+* ---------------------------------------------------------------------------- *
+* ---------------------------------------------------------------------------- *
+
+* Drop short essays
+gen wordcount_vac = wordcount( v_680 )
+gen wordcount_red = wordcount( v_683 )
+
+replace useable = "2 No, too short" if wordcount_vac < 20 & consent_vac == 1
+replace useable = "2 No, too short" if wordcount_red < 20 & consent_red == 1
+
+
+save "$data/Data_with_printing_rules_20221011", replace

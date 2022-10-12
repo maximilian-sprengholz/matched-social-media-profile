@@ -620,7 +620,7 @@ matchparams <- dict(list(
 
     # Taste
     taste = dict(list(
-        hl = list(label="Geschmack", icon="fa-star"),
+        hl = list(label = "Geschmack", icon = "fa-star"),
         printsubset = list(
             subgroups = NA,
             map = list(
