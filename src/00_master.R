@@ -30,7 +30,7 @@ library(haven)
 
 ### PARAMETERS ###
 `%!in%` <- Negate(`%in%`)
-wd <- '/home/max/Seafile/Projects/matched-social-media-profile'
+wd <- '/PATH/TO/matched-social-media-profile'
 setwd(wd)
 
 

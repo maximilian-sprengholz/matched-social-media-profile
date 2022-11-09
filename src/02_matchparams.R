@@ -21,16 +21,16 @@ The dictionary contains all info necessary to:
 
 - split (str/logical): separator if strings are to be treated as vector
 - fuzzy (logical): TRUE if variable requires fuzzy matching
-- fuzzy_distperchar (float, default = 0.33): 
+- fuzzy_distperchar (float, default = 0.25): 
   - this is a factor to compute the maxDist parameter used by fuzzy amatch() in match_values() 
   - consider two strings to compare, one longer than the other, then:
-    maxDist = floor(length(str_longer)*0.33)
-  - maxDist = 3 would mean that 3 x char deletion, insertion, substitution and transposition, 
+    maxDist = floor(length(str_longer)*0.25)
+  - maxDist = 3 would mean that 3 x char deletion/insertion/substitution/transposition, 
     are allowed for each comparison
 - weight: value or function (similar to Balietti weight.js)
 
 Dict evaluation is smart: If key is not set, a default is assumed. FALSE for
-split and fuzzy, 0.33 for fuzzy_distperchar; see matcher().
+split and fuzzy, 0.25 for fuzzy_distperchar; see matcher().
 
 Comments:
 - Open answers under "Andere, und zwar:" can be vectors, but in the Baliettia

@@ -144,33 +144,33 @@ The first set of tests should check if the worst/best matches in the data make s
 Please check the top-25 and bottom-25 of matches as shown below and note any peculiarities.
 '
 
-# # high/low values
-# summary(df$match_simscore)
-# df_simhigh <- df %>%
-#     select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
-#     arrange(desc(match_simscore)) %>%
-#     slice_head(n = 25)
-# print(df_simhigh)
-# df_simlow <- df %>% 
-#     select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
-#     arrange(match_simscore) %>%
-#     slice_head(n = 25)
-# print(df_simlow)
+# high/low values
+summary(df$match_simscore)
+df_simhigh <- df %>%
+    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
+    arrange(desc(match_simscore)) %>%
+    slice_head(n = 25)
+print(df_simhigh)
+df_simlow <- df %>% 
+    select(c(c_0116, match_c_0116, match_simscore, match_profile_simscore)) %>%
+    arrange(match_simscore) %>%
+    slice_head(n = 25)
+print(df_simlow)
 
-# # subset (save memory)
-# df_matchvars <- df %>% select(c("c_0116", "match_c_0116", get_matchvars(matchparams = matchparams)))
+# subset (save memory)
+df_matchvars <- df %>% select(c("c_0116", "match_c_0116", get_matchvars(matchparams = matchparams)))
 
-# # check manually for high/low simscores and each match (= 1 row in the corresponding df)
-# compare_by_id(
-#     df = df_matchvars,
-#     pid = as.numeric(df_simhigh[1, "c_0116"]),
-#     matchid = as.numeric(df_simhigh[1, "match_c_0116"])
-#     )
-# compare_by_id(
-#     df = df_matchvars,
-#     pid = as.numeric(df_simlow[1, "c_0116"]),
-#     matchid = as.numeric(df_simlow[1, "match_c_0116"])
-#     )
+# check manually for high/low simscores and each match (= 1 row in the corresponding df)
+compare_by_id(
+    df = df_matchvars,
+    pid = as.numeric(df_simhigh[1, "c_0116"]),
+    matchid = as.numeric(df_simhigh[1, "match_c_0116"])
+    )
+compare_by_id(
+    df = df_matchvars,
+    pid = as.numeric(df_simlow[1, "c_0116"]),
+    matchid = as.numeric(df_simlow[1, "match_c_0116"])
+    )
 
 
 ### TEST 2 ########################################################################

@@ -6,7 +6,9 @@
 
 '
 This file checks with a subset of the results what sensible thresholds might be
-for the non-focal similarity to be high or low.
+for the non-focal similarity to be high or low. matches.feather has to be generated
+without simhigh/simlow thresholds and without limit to the number of matches to
+produce sensible results (using the final matches.feather makes no sense!).
 '
 
 ### PARAMETERS ###
@@ -16,10 +18,7 @@ source("src/02_matchparams.R")
 ### RUN ###
 
 # import matched data
-df <- read_feather(paste0(wd, "/data/post_match_preselection.feather"))
-
-# correct mistake that people have been matched to themselves (wrong filter spec)
-df <- df %>% filter(c_0116 != match_c_0116)
+df <- read_feather(paste0(wd, "/data/matches.feather"))
 
 ### distribution of simscores
 summary(df$match_simscore)
@@ -31,31 +30,6 @@ ggplot(data = df, aes(x = match_simscore)) +
     annotate("text", x = quantiles[c(2, 11, 19)] - 55, y = 63000,
            label = paste(c("p10", "p50", "p90"), "=", quantiles[c(2, 11, 19)]), size = 3)
 ggsave(paste0(wd, "/results/hist_simscores_all.pdf"))
-
-# match group: opinion (same/diff) x simscore (high/low)
-df_opsame_simhigh <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
-    slice(which.max(match_simscore)) %>%
-    mutate(match_group = "Same opinion, same char.") %>%
-    select(c(c_0116, match_c_0116, match_group, match_simscore))
-df_opsame_simlow <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior == match_essay_opinion_prior) %>%
-    slice(which.min(match_simscore)) %>%
-    mutate(match_group = "Same opinion, diff. char.") %>%
-    select(c(c_0116, match_c_0116, match_group, match_simscore))
-df_opdiff_simhigh <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
-    slice(which.max(match_simscore)) %>%
-    mutate(match_group = "Diff. opinion, same char.") %>%
-    select(c(c_0116, match_c_0116, match_group, match_simscore))
-df_opdiff_simlow <- df %>% group_by_at("c_0116") %>%
-    filter(essay_opinion_prior != match_essay_opinion_prior) %>%
-    slice(which.min(match_simscore)) %>%
-    mutate(match_group = "Diff. opinion, diff. char.") %>%
-    select(c(c_0116, match_c_0116, match_group, match_simscore))
-
-# merge match group
-df_match <- rbind(df_opsame_simhigh, df_opsame_simlow, df_opdiff_simhigh, df_opdiff_simlow)
 
 # plot
 ggplot(data = df_match, aes(x = match_simscore, fill = match_group)) +
