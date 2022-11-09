@@ -6,26 +6,16 @@
 
 
 ### PACKAGES ###
-# install.packages("R6")
-# install.packages("tidyverse")
-# install.packages("stringdist")
-# install.packages("collections")
-# install.packages("stringi")
-# install.packages("feather")
-# install.packages("tictoc")
-# install.packages("furrr")
-# install.packages("haven")
-library(R6)
-library(tidyverse)
-library(stringdist)
-library(collections)
-library(stringi)
-library(feather)
-library(tictoc)
-library(furrr)
-library(progressr)
-library(parallel)
-library(haven)
+install.packages("remotes")
+library("remotes")
+pkgs <- list(
+    names = c("haven", "furrr", "tictoc", "feather", "stringi", "collections", "stringdist", "tidyverse"),
+    versions = c("2.5.1", "0.3.1", "1.1", "0.3.5", "1.7.8", "0.3.6", "0.9.10", "1.3.2")
+    )
+for (i in 1:length(pkgs$names)) {
+    install_version(pkgs$names[i], version = pkgs$versions[i], repos = "http://cran.us.r-project.org", dependencies = TRUE)
+}
+lapply(unlist(pkgs$names), library, character.only=TRUE)
 
 
 ### PARAMETERS ###
