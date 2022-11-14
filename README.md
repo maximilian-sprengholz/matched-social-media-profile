@@ -1,9 +1,10 @@
 # Matched Social Media Profile
 
-_Timestamp: 16.10.2022_
+For an experiment in a follow-up wave of a panel survey, individual social media profiles are used as a stimulus to signal similarity or difference to a respondent. We estimate similarity/difference via a matching approach using respondent's information from the prior wave, and dynamically create a fictitious social media profile for matched individuals.
 
+End of most recent run: _16.10.22_
 
-For an experiment in follow-up wave of a panel survey, individual social media profiles are used as a stimulus to signal similarity or difference to a respondent. We estimate similarity/difference via a matching approach using respondent's information from the prior wave, and dynamically create a fictitious social media profile for matched individuals.
+Repo handover (with some housekeeping changes): _14.11.22_
 
 ## Project organization
 
