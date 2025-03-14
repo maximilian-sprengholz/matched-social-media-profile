@@ -2,9 +2,7 @@
 
 For an experiment in a follow-up wave of a panel survey, individual social media profiles are used as a stimulus to signal similarity or difference to a respondent. We estimate similarity/difference via a matching approach using respondent's information from the prior wave, and dynamically create a fictitious social media profile for matched individuals.
 
-End of most recent run: _16.10.22_
-
-Repo handover (with some housekeeping changes): _14.11.22_
+End of most recent run: _04.02.24_
 
 ## Project organization
 
@@ -12,7 +10,7 @@ Repo handover (with some housekeeping changes): _14.11.22_
 .
 ├── .gitignore
 ├── README.md
-├── data               <- data (input and output)
+├── data               <- data (input and output, mostly untracked by git)
 ├── profiles           <- exported profiles
 ├── results            <- tables/figures
 └── src                <- Source code
@@ -23,10 +21,10 @@ Create a project-specific environment via `conda` and run `00_master.R`. The env
 
 ```sh
 # create and activate conda environment (initialized as subdirectory ./env)
-cd /path/to/qualtrics-input
+cd /path/to/matched-social-media-profile
 conda env create --prefix ./env --file environment.yml
 conda activate ./env
 # run
 radian
-source("src/00_master.R")
+source("src/00_master.R") # needs input data as csv (see 99_dta_to_csv.do)
 ```
