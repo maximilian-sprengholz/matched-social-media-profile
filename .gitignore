@@ -1,6 +1,4 @@
-/data/*.feather
-/data/*.dta
-/data/*.csv
+/data
 !/data/match_id_correspondence.csv
 /env
 /profiles
