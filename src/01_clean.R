@@ -16,7 +16,7 @@ set.seed(42)
 ### FUNCTIONS ###
 
 clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
-
+  
   # replace
   dfcol <- gsub(replace_pattern, "", dfcol, ignore.case = TRUE)
   # empty brackets
@@ -27,10 +27,10 @@ clean_open_answers <- function(dfcol, replace_pattern, to_comma_pattern) {
   dfcol <- str_trim(dfcol, "both")
   dfcol <- gsub("\\s\\s+", " ", dfcol)
   # remove superfluous commas
-  dfcol <- gsub(",,+|,\\s,|\\s,\\s", ",", dfcol)
+  dfcol <- gsub(",,+|,\\s,+|\\s,\\s", ",", dfcol)
   dfcol <- gsub("^,\\s|^,|,\\s$|,$|\\s,", "", dfcol)
-
-  }
+  
+}
 
 ### DEMOGRAPHICS ###
 
@@ -66,7 +66,7 @@ df$othereyes <- mapply(
     # check othereyes is actually a combination of eyes and othereyes
     if (e %in% c("braun", "grün", "blau") & !e %in% c(matchlist) & !all(is.na(matchlist))) {
       matchlist <- c(e, matchlist)
-      }
+    }
     # order and paste together
     if (!all(is.na(matchlist))) {
       matchlist <- matchlist[order(matchlist)]
@@ -74,11 +74,11 @@ df$othereyes <- mapply(
       return(str)
     } else {
       return(NA)
-      }
-    },
+    }
+  },
   df$eyes,
   df$othereyes_orig
-  )
+)
 df <- df %>% mutate(eyes = ifelse(othereyes %in% c("braun", "grün", "blau"), othereyes, eyes))
 df$othereyes[df$othereyes %in% c("braun", "grün", "blau")] <- NA
 df$eyes[!is.na(df$othereyes)] <- NA
@@ -94,40 +94,38 @@ df$eyes[!is.na(df$othereyes)] <- NA
 df <- rename(df, language_orig = language)
 # general cleaning
 replace_pattern <- c(
-  "vn", "Xxx", "möchte nicht sagen", "nicht relevant für diese umfrage!", "K.A",
-  "dumme umfragen beantworten"
-  )
+  "\\.", "R", "Keine Angabe"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|[&]|[+]|\\bbzw.\\b|\\bund\\b|\\boder\\b|[:]|[;]|[.]|[-]"
 df$language <- clean_open_answers(df$language_orig, replace_pattern, to_comma_pattern)
 # extract strings
-# extract_pattern <- c(
-#   "\\S+isch", "\\S+ich", "\\S+ish", "\\S+eutsch", "farsi", "latein",
-#   "hindi", "afrikaans", "mandingo", "marathi", "urdu", "pashtu", "yoruba", "twi", "tamil",
-#   "castellano"
-#   )
-# extract_pattern <- paste(paste0("\\b", extract_pattern, "([a-z]+)?\\b"), collapse = "|")
-# df$language <- unlist(lapply(df$language, function(str) {
-#   matchlist <- str_extract_all(str, regex(extract_pattern, ignore_case = TRUE))
-#   str <- sapply(matchlist, paste, collapse = ", ")
-#   return(str)
-# }))
+extract_pattern <- c(
+  "\\S+isch", "\\S+ich", "\\S+ish", "\\S+eutsch", "\\S+ian", "\\S+ien", "castellano", "dgs", "farsi", "latein",
+  "hindi", "afrikaans", "mandingo", "marathi", "urdu", "pashtu", "romana", "somali", "twi", "tamil",
+  "telugu", "visayas", "yoruba"
+)
+extract_pattern <- paste(paste0("\\b", extract_pattern, "([a-z]+)?\\b"), collapse = "|")
+df$language <- unlist(lapply(df$language, function(str) {
+  matchlist <- str_extract_all(str, regex(extract_pattern, ignore_case = TRUE))
+  str <- sapply(matchlist, paste, collapse = ", ")
+  return(str)
+}))
 
 df <- rename(df, otherlanguage_orig = otherlanguage)
 # general cleaning
 replace_pattern <- c(
-  "vn", "Xxx", "möchte nicht sagen", "nicht relevant für diese umfrage!", "K.A",
-  "dumme umfragen beantworten"
-  )
+  "\\.", "R", "Keine Angabe"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
-to_comma_pattern <- "/|[&]|[+]|\\bbzw.\\b|\\bund\\b|\\boder\\b|[:]|[;]|[.]|[-]"
+to_comma_pattern <- "/|[&]|[\\+]|\\bbzw.\\b|\\bund\\b|\\boder\\b|[:]|[;]|[.]|[-]"
 df$otherlanguage <- clean_open_answers(df$otherlanguage_orig, replace_pattern, to_comma_pattern)
 # extract strings
 extract_pattern <- c(
-  "\\S+isch", "\\S+ich", "\\S+ish", "\\S+eutsch", "farsi", "latein",
-  "hindi", "afrikaans", "mandingo", "marathi", "urdu", "pashtu", "yoruba", "twi", "tamil",
-  "castellano"
-  )
+  "\\S+ische*", "\\S+iche*", "\\S+ishe*", "\\S+eutsche*", "\\S+ian", "\\S+ien", "castellano", "dgs", "farsi", "latein",
+  "hindi", "afrikaans", "mandingo", "marathi", "urdu", "pashtu", "romana", "somali", "twi", "tamil",
+  "telugu", "visayas", "yoruba"
+)
 extract_pattern <- paste(paste0("\\b", extract_pattern, "([a-z]+)?\\b"), collapse = "|")
 df$otherlanguage <- unlist(lapply(df$otherlanguage, function(str) {
   matchlist <- str_extract_all(str, regex(extract_pattern, ignore_case = TRUE))
@@ -137,7 +135,8 @@ df$otherlanguage <- unlist(lapply(df$otherlanguage, function(str) {
 
 # totlanguage (first language + other languages)
 df$totlanguage <- unlist(lapply(df$otherlanguage, function(str) {
-  int <- str_count(str, pattern = ", ") + 1
+  int <- str_count(str, pattern = ", ")
+  if (nchar(str) > 0) int <- int + 2 else int <- int + 1
   return(int)
 }))
 
@@ -152,12 +151,12 @@ First 3 digits used.
 '
 df <- rename(df, currentzip_orig = currentzip)
 df <- df %>% mutate(currentzip = strtrim(
-    as.character(ifelse(
-      currentzip_orig < 10000,
-      paste0(0, currentzip_orig),
-      currentzip_orig
-      )),
-    3))
+  as.character(ifelse(
+    currentzip_orig < 10000,
+    paste0(0, currentzip_orig),
+    currentzip_orig
+  )),
+  3))
 
 # currentrural
 
@@ -178,19 +177,19 @@ First 3 digits used.
 '
 df <- rename(df, homezip_ger_orig = homezip_ger)
 df <- df %>% mutate(homezip_ger = strtrim(
-    as.character(ifelse(
-      homezip_ger_orig < 10000,
-      paste0(0, homezip_ger_orig),
-      homezip_ger_orig
-      )),
-    3))
+  as.character(ifelse(
+    homezip_ger_orig < 10000,
+    paste0(0, homezip_ger_orig),
+    homezip_ger_orig
+  )),
+  3))
 
 # hometown_foreign
 df <- rename(df, hometown_foreign_orig = hometown_foreign)
 # general cleaning
 replace_pattern <- c(
   "möchte nicht sagen", "keine angabe", "geht sie nichts an", "geht keinen etwas an", "K.A.", "-"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$hometown_foreign <- clean_open_answers(df$hometown_foreign_orig, replace_pattern, to_comma_pattern)
@@ -210,8 +209,9 @@ replace_pattern <- c(
   "kam", "mein", "aus", "einer", "mein", "ist", "er", "sie", "nur", "vater", "mutter",
   "opa", "oma", "großvater", "großmutter", "beide", "eltern\\S+", "haben", "zeitweise",
   "damals", "wohl", "in", "im", "von", "stammt", "noch", "dem", "der",
-  "die", "heut\\S+", "kolonie", "ehe\\S+", "hierher", "eingewandert", "früher", "meine"
-  )
+  "die", "heut\\S+", "kolonie", "ehe\\S+", "hierher", "eingewandert", "früher", "meine",
+  "J", "Ja", "K,A", "Ka", "kommt", "X"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$secondgencountry <- clean_open_answers(df$secondgencountry, replace_pattern, to_comma_pattern)
@@ -266,7 +266,7 @@ df <- rename(df, otherpets_orig = otherpets)
 # general cleaning
 replace_pattern <- c(
   "ihr", "habtn", "[0-9]+"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$otherpets <- clean_open_answers(df$otherpets_orig, replace_pattern, to_comma_pattern)
@@ -341,10 +341,8 @@ df$otherpets <- clean_open_answers(df$otherpets_orig, replace_pattern, to_comma_
 # othercolor
 df <- rename(df, othercolor_orig = othercolor)
 replace_pattern <- c(
-  "gedeckte", "allgemein", "pudrige", "warme", "farb\\S+", "liebling\\S+", "mal", "dann", "töne",
-  "mehrere", "mit", "gerne", "alle", "viele", "zum", "tragen", "wohnen", "diverse",
-  "eindeutig", "zarte", "keine", "mischtöne", "manchmal", "ich", "habe", "eine", "phase"
-  )
+  "farb\\S+", "warum soll ich das sagen!", "unbekannt", "variabel.", "nicht relevant", "ka"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$othercolor <- clean_open_answers(df$othercolor_orig, replace_pattern, to_comma_pattern)
@@ -353,8 +351,8 @@ df$othercolor <- clean_open_answers(df$othercolor_orig, replace_pattern, to_comm
 
 # otherfood
 extract_pattern <- c(
-  "\\S+isch", "\\S+ich", "\\S+ish", "all\\S+", "medi\\S+", "Tha\\S+", "Veg\\S+"
-  )
+  "\\S+isch", "\\S+ich", "\\S+ish", "alle[sm]*", "medi\\S+", "Tha\\S+", "Veg\\S+"
+)
 extract_pattern <- paste(paste0("\\b", extract_pattern, "\\b"), collapse = "|")
 df <- rename(df, otherfood_orig = otherfood)
 df$otherfood <- unlist(lapply(df$otherfood_orig, function(str) {
@@ -376,8 +374,10 @@ replace_pattern <- c(
   "derzeit", "keines", "der", "die", "das", "ganz", "klar", "ich", "würde", "gerne", "nach",
   "reis\\S+", "kommt", "drauf", "darauf", "an", "wie", "viele", "wochen", "ähnlich", "auf", "durch",
   "panam", "lieber", "wei[sß]+", "nicht", "wo", "kann", "meinen", "hund", "mitnehmen", "doch",
-  "wäre", "nett"
-  )
+  "wäre", "nett", "Xdgv", "Xxxx", "will", "wieder", "werde", "mich", "für", "es", "gibt",
+  "mal", "wahrscheinlich", "nehmen", "verygood", "Vfyb","wählen", "dort", "war", "noch", "nie",
+  "da", "eine", "viel", "bedeutet", "uns", "wir", "bei[m]*", "nächste[sm]*", "ist"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$vacation <- clean_open_answers(df$vacation_orig, replace_pattern, to_comma_pattern)
@@ -411,7 +411,7 @@ replace_pattern <- c(
   "etwas", "im", "in", "täglich", "übungen", "medizi\\S+", "für", "der", "die", "das",
   "genannten", "zu", "alt", "gelegent\\S+", "funktio\\S+", "wenn", "[0-9]+", "km",
   "manchmal", "berittenes"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[.]|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$othersportdo <- clean_open_answers(df$othersportdo_orig, replace_pattern, to_comma_pattern)
@@ -445,7 +445,7 @@ replace_pattern <- c(
   "jahre", "deutsch[er]+", "bis", "die", "der", "das", "eigentlich", "gemischt", "ab",
   "Robert", "Schumann", "musik", "aktuelles", "hits", "us[w.]+", "von", "genr\\S+", "aus",
   "den", "lieder"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[(]|[)]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$othermusic <- clean_open_answers(df$othermusic_orig, replace_pattern, to_comma_pattern)
@@ -459,8 +459,8 @@ df$othermusic <- gsub("\\S+alle\\S+", "", df$othermusic, ignore.case = TRUE)
 df <- rename(df, bestmusician_orig = bestmusician)
 # general cleaning
 replace_pattern <- c(
-  "----", "_", "momentan", "habe ich nicht"
-  )
+  "----", "_", "momentan", "habe ich nicht", "gibt", "es", "konkrete"
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[(]|[)]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$bestmusician <- clean_open_answers(df$bestmusician_orig, replace_pattern, to_comma_pattern)
@@ -484,7 +484,7 @@ df$bestmovie <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$bestmovie_orig
 # general cleaning
 replace_pattern <- c(
   "komm grad nicht drauf", "weiß nicht", "filme", "alle teile"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[(]|[)]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$bestmovie <- clean_open_answers(df$bestmovie, replace_pattern, to_comma_pattern)
@@ -499,7 +499,7 @@ df$bestactor <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$bestactor_orig
 # general cleaning
 replace_pattern <- c(
   "komm grad nicht drauf", "weiß nicht", "filme", "alle teile"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$bestactor <- clean_open_answers(df$bestactor, replace_pattern, to_comma_pattern)
@@ -523,7 +523,7 @@ df$bestteam <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$bestteam_orig, 
 # general cleaning
 replace_pattern <- c(
   "da gibt es mehrere wie", "Es gibt keine Mannschaften beim Reiten"
-  )
+)
 replace_pattern <- paste(paste0("\\b", replace_pattern, "\\b"), collapse = "|")
 to_comma_pattern <- "/|\\s-\\s|[(]|[)]|\\bund\\b|[&]|[+]|\\boder\\b|\\bbzw.\\b|[?]|[!]|[:]|[;]"
 df$bestteam <- clean_open_answers(df$bestteam, replace_pattern, to_comma_pattern)
@@ -592,7 +592,7 @@ df <- rename(df, webchannels_orig = webchannels)
 df$webchannels <- gsub(
   "^Bei den Webchannels interessiere ich mich insbesondere für '|'[.]$", "",
   df$webchannels_orig
-  )
+)
 # delete everything in parentheses and after dashes
 df$webchannels <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$webchannels, ignore.case = TRUE)
 # general cleaning
@@ -612,7 +612,7 @@ df <- rename(df, creative_orig = creative)
 df$creative <- gsub(
   "^Viel Freude macht mir auch '|'[.]$", "",
   df$creative_orig
-  )
+)
 # delete everything in parentheses and after dashes
 df$creative <- gsub("\\s[-–]\\s.*|^[-–]\\s|[(].*[)]", "", df$creative, ignore.case = TRUE)
 # general cleaning
@@ -630,4 +630,4 @@ df %>%
 df <- df %>% mutate(matchable = ifelse(useable == "1 Yes", 1, 0))
 
 ### SAVE ###
-write_feather(df, paste0(wd, "/data/pre_match.feather"))
+write_rds(df, paste0(wd, "/data/pre_match.rds"))

@@ -7,7 +7,7 @@
 ### PARAMETERS ###
 set.seed(42)
 options(scipen = 99)
-source("src/02_matchparams.R")
+source("src/02_matchparams.R", encoding = "UTF-8")
 
 
 ### FUNCTIONS ###
@@ -293,7 +293,7 @@ if (length(docs) > 0) {
     }
 
 # import matched data
-df <- read_feather(paste0(wd, "/data/post_match.feather"))
+df <- read_rds(paste0(wd, "/data/post_match.rds"))
 df_exportable <- df %>% filter(match_profile_export == 1) # those to be exported
 
 # set-up multisession
@@ -322,8 +322,12 @@ df_matches <- df %>%
 write.csv(df_matches, paste0(wd, "/data/match_id_correspondence.csv"), row.names = FALSE)
 
 # save
-write_feather(df, paste0(wd, "/data/post_export.feather"))
+write_rds(df, paste0(wd, "/data/post_export.rds"))
 colnames(df) <- sapply(colnames(df), function(str) {
     strtrim(str, 32)
     })
-write_dta(df %>% replace(is.na(.), "."), paste0(wd, "/data/post_export.dta"))
+write_dta(
+  df %>% select(!any_of(c("datetime", "date_of_last_access"))) %>%
+    replace(is.na(.), "."),
+  paste0(wd, "/data/post_export.dta")
+  )

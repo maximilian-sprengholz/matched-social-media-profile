@@ -3,5 +3,6 @@
 /data/*.csv
 !/data/match_id_correspondence.csv
 /env
+/profiles
 src/.Rhistory
 .Rhistory

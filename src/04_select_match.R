@@ -24,13 +24,13 @@ This file:
 
 ### PARAMETERS ###
 set.seed(42)
-source("src/02_matchparams.R")
+source("src/02_matchparams.R", encoding = "UTF-8")
 
 
 ### SELECT #####################################################################
 
-df <- read_feather(paste0(wd, "/data/pre_match.feather")) # cleaned pre-match data
-df_matches <- read_feather(paste0(wd, "/data/matches.feather")) # match data
+df <- read_rds(paste0(wd, "/data/pre_match.rds")) # cleaned pre-match data
+df_matches <- read_rds(paste0(wd, "/data/matches.rds")) # match data
 
 # (1) random selection of match in match_group (so that each group contains one match)
 # (2) random selection of match group: set export indicator (match_profile_export)
@@ -53,5 +53,4 @@ table(df_random_match %>% filter(match_profile_export == 1) %>% select(c(match_g
 df <- merge(df, df_random_match, by = "c_0116", all = TRUE)
 
 # save
-write_feather(df, paste0(wd, "/data/post_match.feather"))
-
+write_rds(df, paste0(wd, "/data/post_match.rds"))
