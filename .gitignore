@@ -1,6 +1,6 @@
 /data
 !/data/match_id_correspondence.csv
 /env
-/profiles
+/profiles/*.html
 src/.Rhistory
 .Rhistory
